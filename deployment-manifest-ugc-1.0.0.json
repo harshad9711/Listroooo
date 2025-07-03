@@ -1,0 +1,67 @@
+{
+  "deployment": {
+    "version": "1.0.0",
+    "environment": "production",
+    "timestamp": "2025-06-19 23:15:40",
+    "type": "ugc-feature-promotion"
+  },
+  "features": {
+    "ugc.social-listening": {
+      "enabled": true,
+      "rollout_percentage": 100,
+      "promoted_at": "2025-06-19 23:15:40"
+    },
+    "ugc.auto-editing": {
+      "enabled": true,
+      "rollout_percentage": 100,
+      "promoted_at": "2025-06-19 23:15:40"
+    },
+    "ugc.voiceover-generation": {
+      "enabled": true,
+      "rollout_percentage": 100,
+      "promoted_at": "2025-06-19 23:15:40"
+    },
+    "ugc.hotspot-generation": {
+      "enabled": true,
+      "rollout_percentage": 100,
+      "promoted_at": "2025-06-19 23:15:40"
+    },
+    "ugc.database-integration": {
+      "enabled": true,
+      "rollout_percentage": 100,
+      "promoted_at": "2025-06-19 23:15:40"
+    },
+    "ugc.inbox-management": {
+      "enabled": true,
+      "rollout_percentage": 100,
+      "promoted_at": "2025-06-19 23:15:40"
+    },
+    "ugc.auto-edit-button": {
+      "enabled": true,
+      "rollout_percentage": 100,
+      "promoted_at": "2025-06-19 23:15:40"
+    },
+    "ugc.voiceover-tab": {
+      "enabled": true,
+      "rollout_percentage": 100,
+      "promoted_at": "2025-06-19 23:15:40"
+    },
+    "ugc.hotspot-generator": {
+      "enabled": true,
+      "rollout_percentage": 100,
+      "promoted_at": "2025-06-19 23:15:40"
+    },
+    "ugc.dashboard": {
+      "enabled": true,
+      "rollout_percentage": 100,
+      "promoted_at": "2025-06-19 23:15:40"
+    }
+  },
+  "files_modified": [
+    "src/lib/ugcFeatureFlags.ts",
+    "src/lib/ugcFeatureFlags.production.ts",
+    ".env.production"
+  ],
+  "backup_location": "/Users/superior/Downloads/project/backups/ugc-20250619-231543",
+  "deployment_notes": "UGC features promoted to production with 100% rollout"
+}
