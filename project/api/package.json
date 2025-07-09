@@ -1,0 +1,21 @@
+{
+  "name": "ugc-api-server",
+  "version": "1.0.0",
+  "description": "UGC API Server for handling UGC endpoints",
+  "main": "ugc-server.js",
+  "scripts": {
+    "start": "node ugc-server.js",
+    "dev": "nodemon ugc-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["ugc", "api", "express"],
+  "author": "Your Name",
+  "license": "MIT"
+} 
