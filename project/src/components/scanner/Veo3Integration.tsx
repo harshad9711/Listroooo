@@ -1,12 +1,13 @@
-import React from "react";
+import { Card, Title } from '@tremor/react';
+import { 
+  History, 
+  Settings, 
+  Lightbulb, 
+  Sparkles, 
+  AlertCircle 
+} from 'lucide-react';
 
-
-import VideoGenerator from './VideoGenerator';
 import Veo3PromptForm from './Veo3PromptForm';
-
-interface Veo3IntegrationProps {
-  userId: string;
-}
 
 const examplePrompts = [
   {
@@ -26,16 +27,10 @@ const examplePrompts = [
   }
 ];
 
-export default function Veo3Integration({ userId }: Veo3IntegrationProps) {
-  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
-  const [selectedPrompt, setSelectedPrompt] = useState<typeof examplePrompts[0] | null>(null);
-
-  const handleVideoComplete = (videoUrl: string) => {
-    setGeneratedVideoUrl(videoUrl);
-  };
-
+export default function Veo3Integration() {
   const handleUsePrompt = (prompt: typeof examplePrompts[0]) => {
-    setSelectedPrompt(prompt);
+    // Handle the generated prompt
+    console.log('Generated prompt:', prompt);
   };
 
   return (

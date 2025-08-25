@@ -1,5 +1,7 @@
-import React from "react";
-
+import React, { useState, useEffect } from "react";
+import { ugcApi } from '../../services/ugcApi';
+import { ugcService } from '../../services/ugcService';
+import type { UGCContent, UGCCampaign, UGCAnalytics } from '../../services/ugcService';
 
 import {
   Instagram, 
@@ -8,9 +10,6 @@ import {
   Youtube, 
   Music, 
   CheckCircle, 
-  XCircle, 
-  Clock, 
-  Star,
   RefreshCw,
   Plus,
   Eye,
@@ -48,7 +47,7 @@ const UGCDashboard: React.FC<UGCDashboardProps> = ({ className = '' }) => {
       const [contentData, campaignsData, analyticsData] = await Promise.all([
         ugcService.getUGCContent(),
         ugcService.getUGCCampaigns(),
-        ugcService.getUGCAnalytics()
+        ugcApi.getAnalytics()
       ]);
       
       setContent(contentData);

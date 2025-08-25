@@ -1,5 +1,7 @@
-import React from "react";
-
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from "../../contexts/AuthContext";
+import { Link } from 'react-router-dom';
 
 
 const Register = () => {
@@ -17,8 +19,9 @@ const Register = () => {
     try {
       await register(name, email, password);
       navigate('/dashboard');
-    } catch (err) {
-      setError('Failed to create an account');
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      setError(err?.message || 'Failed to create an account. Please try again.');
     }
   };
 

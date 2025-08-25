@@ -1,37 +1,24 @@
-import React from "react";
-
+import React, { useState, useEffect } from "react";
+import { ugcService } from '../../services/ugcService';
+import type { UGCInboxItem } from '../../services/ugcService';
 
 import {
   Inbox, 
   CheckCircle, 
   XCircle, 
-  Clock, 
   Star,
   Eye,
-  Edit3,
-  Trash2,
-  Share2,
-  Heart,
-  MessageCircle,
   Tag,
-  User,
-  Calendar,
-  Filter,
-  Search,
   RefreshCw,
-  Download,
-  Upload,
-  Settings,
-  Zap,
-  Target,
-  Award,
-  Activity,
   Instagram,
   Facebook,
   Twitter,
   Youtube,
   Music,
-  Globe
+  Globe,
+  Search,
+  Heart,
+  MessageCircle
 } from 'lucide-react';
 
 interface UGCInboxProps {
@@ -41,7 +28,6 @@ interface UGCInboxProps {
 const UGCInbox: React.FC<UGCInboxProps> = ({ className = '' }) => {
   const [inboxItems, setInboxItems] = useState<UGCInboxItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<UGCInboxItem | null>(null);
   const [filters, setFilters] = useState({
     status: 'all',
     platform: 'all',
@@ -285,7 +271,7 @@ const UGCInbox: React.FC<UGCInboxProps> = ({ className = '' }) => {
                         Feature
                       </button>
                       <button
-                        onClick={() => setSelectedItem(item)}
+                        onClick={() => {}}
                         className="flex items-center px-3 py-1 text-blue-600 hover:bg-blue-100 rounded text-sm"
                       >
                         <Eye className="h-4 w-4 mr-1" />

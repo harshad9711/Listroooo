@@ -1,428 +1,328 @@
-import { ugcService, type UGCContent, type UGCEdit, type UGCVoiceover, type UGCHotspot, type UGCInboxItem } from "./ugcService";
+// Backend API configuration
+const API_BASE_URL = 'http://localhost:3001/api';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
-// UGC API Endpoints
+// Helper function to get auth token
+const getAuthToken = (): string | null => {
+  // In a real app, this would come from your auth context
+  return localStorage.getItem('authToken');
+};
+
+// Helper function for API calls
+const apiCall = async (endpoint: string, options: RequestInit = {}) => {
+  const token = getAuthToken();
+  const url = `${API_BASE_URL}${endpoint}`;
+  
+  const config: RequestInit = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    },
+    ...options,
+  };
+
+  try {
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(`API call error for ${endpoint}:`, error);
+    throw error;
+  }
+};
+
+// Helper function for Supabase Edge Functions
+const supabaseCall = async (functionName: string, options: RequestInit = {}) => {
+  const token = getAuthToken();
+  const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
+  
+  const config: RequestInit = {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      ...(token && { 'X-User-Token': token }),
+      ...options.headers,
+    },
+    ...options,
+  };
+
+  try {
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      throw new Error(`Supabase function failed: ${response.status} ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Supabase function error:', error);
+    throw error;
+  }
+};
+
+// UGC API Service
 export class UGCApiService {
-  private baseUrl = '/api/ugc';
-
-  // Content Discovery
-  async discoverContent(hashtags: string[], brandKeywords: string[], platforms: string[] = ['instagram', 'tiktok']): Promise<UGCContent[]> {
+  // Analytics
+  async getAnalytics(dateFrom?: string, dateTo?: string, platform?: string, status?: string) {
     try {
-      const response = await fetch(`${this.baseUrl}/discover`, {
+      return await supabaseCall('ugc-analytics', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          hashtags,
-          brandKeywords,
-          platforms
-        })
+        body: JSON.stringify({ dateFrom, dateTo, platform, status })
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
     } catch (error) {
-      console.error('Error discovering content:', error);
-      // Fallback to service layer for development
-      return ugcService.discoverContent(hashtags, brandKeywords, platforms);
-    }
-  }
-
-  // Rights Management
-  async requestRights(contentId: string, brandId: string, terms: any): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/rights/request`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      console.error('Failed to fetch analytics:', error);
+      return {
+        success: false,
+        analytics: {
+          platformBreakdown: {},
+          statusBreakdown: {},
+          engagement: { total: 0, average: 0, topPerformer: 0 },
+          quality: { averageScore: '0.0', highQuality: 0, totalRated: 0 },
+          sentiment: { averageScore: '0.00', positive: 0, negative: 0, neutral: 0 },
+          trends: { dailyDiscovery: 0, weeklyGrowth: '0%', topPlatform: 'instagram' }
         },
-        body: JSON.stringify({
-          contentId,
-          brandId,
-          terms
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error requesting rights:', error);
-      // Fallback to service layer for development
-      return ugcService.requestRights(contentId, brandId, terms);
-    }
-  }
-
-  async checkRightsStatus(contentId: string): Promise<string> {
-    try {
-      const response = await fetch(`${this.baseUrl}/rights/status/${contentId}`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.status;
-    } catch (error) {
-      console.error('Error checking rights status:', error);
-      // Fallback to service layer for development
-      return ugcService.checkRightsStatus(contentId);
-    }
-  }
-
-  async approveRights(contentId: string): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/rights/approve`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ contentId })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error approving rights:', error);
-      // Fallback to service layer for development
-      return ugcService.approveRights(contentId);
-    }
-  }
-
-  // Auto-Editing
-  async autoEdit(contentId: string, brandGuidelines: any): Promise<UGCEdit> {
-    try {
-      const response = await fetch(`${this.baseUrl}/edit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contentId,
-          brandGuidelines
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error auto-editing:', error);
-      // Fallback to service layer for development
-      return ugcService.autoEdit(contentId, brandGuidelines);
-    }
-  }
-
-  async getEdits(contentId: string): Promise<UGCEdit[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/edit/${contentId}`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting edits:', error);
-      // Fallback to service layer for development
-      return ugcService.getEdits(contentId);
-    }
-  }
-
-  // Voiceover Generation
-  async generateVoiceover(contentId: string, script?: string, voiceType: string = 'neutral'): Promise<UGCVoiceover> {
-    try {
-      const response = await fetch(`${this.baseUrl}/voiceover`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contentId,
-          script,
-          voiceType
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error generating voiceover:', error);
-      // Fallback to service layer for development
-      return ugcService.generateVoiceover(contentId, script, voiceType);
-    }
-  }
-
-  async getVoiceovers(contentId: string): Promise<UGCVoiceover[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/voiceover/${contentId}`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting voiceovers:', error);
-      // Fallback to service layer for development
-      return ugcService.getVoiceovers(contentId);
-    }
-  }
-
-  // Hotspot Generation
-  async generateHotspots(contentId: string): Promise<UGCHotspot[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/hotspots`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ contentId })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error generating hotspots:', error);
-      // Fallback to service layer for development
-      return ugcService.generateHotspots(contentId);
-    }
-  }
-
-  async getHotspots(contentId: string): Promise<UGCHotspot[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/hotspots/${contentId}`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting hotspots:', error);
-      // Fallback to service layer for development
-      return ugcService.getHotspots(contentId);
+        totalContent: 0,
+        recentActivity: []
+      };
     }
   }
 
   // Inbox Management
-  async getInbox(status?: string): Promise<UGCInboxItem[]> {
+  async getInbox(status?: string) {
     try {
-      const url = status ? `${this.baseUrl}/inbox?status=${status}` : `${this.baseUrl}/inbox`;
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const endpoint = status ? `/ugc/inbox?status=${status}` : '/ugc/inbox';
+      return await apiCall(endpoint);
     } catch (error) {
-      console.error('Error getting inbox:', error);
-      // Fallback to service layer for development
-      return ugcService.getInbox(status);
+      console.error('Failed to fetch inbox:', error);
+      return [];
     }
   }
 
-  async updateInboxStatus(itemId: string, status: string, notes?: string): Promise<void> {
+  async updateInboxStatus(itemId: string, status: string, notes?: string) {
     try {
-      const response = await fetch(`${this.baseUrl}/inbox/${itemId}`, {
+      return await apiCall(`/ugc/inbox/${itemId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status,
-          notes
-        })
+        body: JSON.stringify({ status, notes })
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
     } catch (error) {
-      console.error('Error updating inbox status:', error);
-      // Fallback to service layer for development
-      return ugcService.updateInboxStatus(itemId, status, notes);
+      console.error('Failed to update inbox status:', error);
+      throw error;
     }
   }
 
-  async addToInbox(contentId: string): Promise<void> {
+  async addToInbox(contentId: string) {
     try {
-      const response = await fetch(`${this.baseUrl}/inbox`, {
+      return await apiCall('/ugc/inbox', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        body: JSON.stringify({ content_id: contentId })
+      });
+    } catch (error) {
+      console.error('Failed to add to inbox:', error);
+      throw error;
+    }
+  }
+
+  // Content Discovery
+  async discoverContent(hashtags: string[], keywords: string[], platforms: string[] = ['instagram', 'tiktok'], limit: number = 20) {
+    try {
+      return await supabaseCall('ugc-discover', {
+        method: 'POST',
+        body: JSON.stringify({ hashtags, keywords, platforms, limit })
+      });
+    } catch (error) {
+      console.error('Failed to discover content:', error);
+      return { success: false, content: [], total: 0 };
+    }
+  }
+
+  // Instagram Integration
+  async searchInstagramHashtag(hashtag: string, limit: number = 20) {
+    try {
+      return await supabaseCall('instagram-integration', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'hashtag_search', hashtag, limit })
+      });
+    } catch (error) {
+      console.error('Failed to search Instagram hashtag:', error);
+      return { success: false, data: [], total: 0 };
+    }
+  }
+
+  async getInstagramLocationPosts(locationId: string, limit: number = 20) {
+    try {
+      return await supabaseCall('instagram-integration', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'location_posts', locationId, limit })
+      });
+    } catch (error) {
+      console.error('Failed to get Instagram location posts:', error);
+      return { success: false, data: [], total: 0 };
+    }
+  }
+
+  async getInstagramUserProfile(username: string) {
+    try {
+      return await supabaseCall('instagram-integration', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'user_profile', userId: username })
+      });
+    } catch (error) {
+      console.error('Failed to get Instagram user profile:', error);
+      return { success: false, data: null };
+    }
+  }
+
+  // TikTok Integration
+  async searchTikTokHashtag(hashtag: string, region: string = 'US', limit: number = 20) {
+    try {
+      return await supabaseCall('tiktok-integration', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'hashtag_search', hashtag, region, limit })
+      });
+    } catch (error) {
+      console.error('Failed to search TikTok hashtag:', error);
+      return { success: false, data: [], total: 0 };
+    }
+  }
+
+  async searchTikTokKeyword(keyword: string, region: string = 'US', limit: number = 20) {
+    try {
+      return await supabaseCall('tiktok-integration', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'keyword_search', keyword, region, limit })
+      });
+    } catch (error) {
+      console.error('Failed to search TikTok keyword:', error);
+      return { success: false, data: [], total: 0 };
+    }
+  }
+
+  async getTikTokTrendingVideos(region: string = 'US', limit: number = 20) {
+    try {
+      return await supabaseCall('tiktok-integration', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'trending_videos', region, limit })
+      });
+    } catch (error) {
+      console.error('Failed to get TikTok trending videos:', error);
+      return { success: false, data: [], total: 0 };
+    }
+  }
+
+  // Rights Management
+  async requestRights(contentId: string, brandId: string, terms: any, contactEmail?: string, message?: string) {
+    try {
+      return await supabaseCall('ugc-rights-request', {
+        method: 'POST',
+        body: JSON.stringify({ contentId, brandId, terms, contactEmail, message })
+      });
+    } catch (error) {
+      console.error('Failed to request rights:', error);
+      throw error;
+    }
+  }
+
+  async checkRightsStatus(contentId: string) {
+    try {
+      return await apiCall(`/ugc/rights/status/${contentId}`);
+    } catch (error) {
+      console.error('Failed to check rights status:', error);
+      throw error;
+    }
+  }
+
+  async approveRights(contentId: string) {
+    try {
+      return await apiCall('/ugc/rights/approve', {
+        method: 'POST',
         body: JSON.stringify({ contentId })
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
     } catch (error) {
-      console.error('Error adding to inbox:', error);
-      // Fallback to service layer for development
-      return ugcService.addToInbox(contentId);
-    }
-  }
-
-  // Analytics
-  async getAnalytics(): Promise<any> {
-    try {
-      const response = await fetch(`${this.baseUrl}/analytics`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting analytics:', error);
-      // Fallback to service layer for development
-      return ugcService.getAnalytics();
-    }
-  }
-
-  // Content Management
-  async getContent(contentId: string): Promise<UGCContent> {
-    try {
-      const response = await fetch(`${this.baseUrl}/content/${contentId}`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting content:', error);
+      console.error('Failed to approve rights:', error);
       throw error;
     }
   }
 
-  async updateContent(contentId: string, updates: Partial<UGCContent>): Promise<UGCContent> {
+  // Auto-Editing
+  async autoEdit(contentId: string, editOptions: any) {
     try {
-      const response = await fetch(`${this.baseUrl}/content/${contentId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error updating content:', error);
-      throw error;
-    }
-  }
-
-  async deleteContent(contentId: string): Promise<void> {
-    try {
-      const response = await fetch(`${this.baseUrl}/content/${contentId}`, {
-        method: 'DELETE'
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-    } catch (error) {
-      console.error('Error deleting content:', error);
-      throw error;
-    }
-  }
-
-  // Batch Operations
-  async batchProcess(contentIds: string[], operation: 'edit' | 'voiceover' | 'hotspots', options?: any): Promise<any[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/batch`, {
+      return await supabaseCall('ugc-auto-edit', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contentIds,
-          operation,
-          options
-        })
+        body: JSON.stringify({ contentId, editOptions })
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
     } catch (error) {
-      console.error('Error batch processing:', error);
+      console.error('Failed to auto-edit:', error);
       throw error;
     }
   }
 
-  // Search and Filter
-  async searchContent(query: string, filters?: any): Promise<UGCContent[]> {
+  async getEdits(contentId: string) {
     try {
-      const response = await fetch(`${this.baseUrl}/search`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query,
-          filters
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      return await apiCall(`/ugc/edit/${contentId}`);
     } catch (error) {
-      console.error('Error searching content:', error);
+      console.error('Failed to get edits:', error);
+      return [];
+    }
+  }
+
+  // Voiceover Generation
+  async generateVoiceover(contentId: string, script?: string, voiceType: string = 'energetic', language: string = 'en') {
+    try {
+      return await supabaseCall('ugc-voiceover', {
+        method: 'POST',
+        body: JSON.stringify({ contentId, script, voiceType, language })
+      });
+    } catch (error) {
+      console.error('Failed to generate voiceover:', error);
       throw error;
     }
   }
 
-  // Export
-  async exportContent(contentIds: string[], format: 'csv' | 'json' | 'pdf' = 'json'): Promise<Blob> {
+  async getVoiceovers(contentId: string) {
     try {
-      const response = await fetch(`${this.baseUrl}/export`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contentIds,
-          format
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.blob();
+      return await apiCall(`/ugc/voiceover/${contentId}`);
     } catch (error) {
-      console.error('Error exporting content:', error);
+      console.error('Failed to get voiceovers:', error);
+      return [];
+    }
+  }
+
+  // Hotspot Generation
+  async generateHotspots(contentId: string) {
+    try {
+      return await apiCall('/ugc/hotspots', {
+        method: 'POST',
+        body: JSON.stringify({ contentId })
+      });
+    } catch (error) {
+      console.error('Failed to generate hotspots:', error);
+      throw error;
+    }
+  }
+
+  async getHotspots(contentId: string) {
+    try {
+      return await apiCall(`/ugc/hotspots/${contentId}`);
+    } catch (error) {
+      console.error('Failed to get hotspots:', error);
+      return [];
+    }
+  }
+
+  // Feedback
+  async submitFeedback(rating: string, comment?: string, userId?: string, contentId?: string, context?: any) {
+    try {
+      return await apiCall('/ugc/feedback', {
+        method: 'POST',
+        body: JSON.stringify({ rating, comment, userId, contentId, context })
+      });
+    } catch (error) {
+      console.error('Failed to submit feedback:', error);
       throw error;
     }
   }

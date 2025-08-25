@@ -1,5 +1,6 @@
-import React from 'react';
-
+import { Navigate, Outlet } from 'react-router-dom';
+import { Sparkles } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const AuthLayout = () => {
   const { user } = useAuth();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Title, Text, Metric, Badge, Button, Tab, TabList, TabGroup, TabPanel, TabPanels } from '@tremor/react';
 import { 
   Sparkles, 
@@ -15,11 +15,9 @@ import {
 import Veo3ProductionForm from '../components/scanner/Veo3ProductionForm';
 import { veo3Production, type Veo3GenerationJob } from '../services/veo3Production';
 import { useAuth } from '../contexts/AuthContext';
-import Veo3Feedback from '../components/scanner/Veo3Feedback';
 
 export default function Veo3Production() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('generate');
   const [analytics, setAnalytics] = useState<any>(null);
   const [recentJobs, setRecentJobs] = useState<Veo3GenerationJob[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +49,7 @@ export default function Veo3Production() {
 
   const handleJobCreated = (job: Veo3GenerationJob) => {
     setRecentJobs(prev => [job, ...prev.slice(0, 9)]);
-    setActiveTab('monitor');
+    // setActiveTab('monitor'); // This line is removed as per the edit hint
   };
 
   const getStatusColor = (status: string) => {
@@ -162,7 +160,7 @@ export default function Veo3Production() {
       )}
 
       {/* Main Content */}
-      <TabGroup value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <TabGroup className="space-y-6">
         <TabList className="grid w-full grid-cols-3">
           <Tab value="generate" className="flex items-center space-x-2">
             <Sparkles className="h-4 w-4" />
@@ -177,184 +175,183 @@ export default function Veo3Production() {
             <span>Analytics</span>
           </Tab>
         </TabList>
-
-        <TabPanel value="generate" className="space-y-6">
-          <Veo3ProductionForm 
-            userId={user.id} 
-            onJobCreated={handleJobCreated}
-          />
-        </TabPanel>
-
-        <TabPanel value="monitor" className="space-y-6">
-          <Card className="bg-white dark:bg-gray-800">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <Title>Recent Jobs</Title>
-                  <Text className="text-gray-500 dark:text-gray-400">
-                    Monitor your AI generation progress
-                  </Text>
-                </div>
-                <Button 
-                  variant="secondary" 
-                  onClick={loadData}
-                  disabled={loading}
-                >
-                  Refresh
-                </Button>
-              </div>
-
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
-                </div>
-              ) : recentJobs.length === 0 ? (
-                <div className="text-center py-8">
-                  <Sparkles className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <Text className="text-gray-500 dark:text-gray-400">
-                    No jobs yet. Start generating content to see your progress here.
-                  </Text>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {recentJobs.map((job) => (
-                    <div
-                      key={job.id}
-                      className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <div className="flex items-center space-x-4">
-                        {getStatusIcon(job.status)}
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {job.type.charAt(0).toUpperCase() + job.type.slice(1)} Generation
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {job.prompts.length} prompts • {new Date(job.created_at).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3">
-                        <Badge color={getStatusColor(job.status) as any}>
-                          {job.status}
-                        </Badge>
-                        
-                        {job.status === 'completed' && job.results && job.results.length > 0 && (
-                          <Button
-                            variant="light"
-                            size="xs"
-                            onClick={() => {
-                              // Show results modal or navigate to results page
-                              console.log('View results:', job.results);
-                            }}
-                          >
-                            View Results
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </Card>
-        </TabPanel>
-
-        <TabPanel value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Performance Metrics */}
+        <TabPanels>
+          <TabPanel className="space-y-6">
+            <Veo3ProductionForm 
+              userId={user.id}
+              onJobCreated={handleJobCreated}
+            />
+          </TabPanel>
+          <TabPanel className="space-y-6">
             <Card className="bg-white dark:bg-gray-800">
               <div className="p-6">
-                <Title className="mb-4">Performance Metrics</Title>
-                {analytics ? (
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <Text>Success Rate</Text>
-                      <Text className="font-medium">{analytics.successRate.toFixed(1)}%</Text>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <Text>Average Processing Time</Text>
-                      <Text className="font-medium">{(analytics.averageProcessingTime / 60).toFixed(1)} minutes</Text>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <Text>Total Jobs Processed</Text>
-                      <Text className="font-medium">{analytics.totalJobs}</Text>
-                    </div>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <Title>Recent Jobs</Title>
+                    <Text className="text-gray-500 dark:text-gray-400">
+                      Monitor your AI generation progress
+                    </Text>
+                  </div>
+                  <Button 
+                    variant="secondary" 
+                    onClick={loadData}
+                    disabled={loading}
+                  >
+                    Refresh
+                  </Button>
+                </div>
+
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+                  </div>
+                ) : recentJobs.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Sparkles className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <Text className="text-gray-500 dark:text-gray-400">
+                      No jobs yet. Start generating content to see your progress here.
+                    </Text>
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <Text className="text-gray-500 dark:text-gray-400">No data available</Text>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* User Feedback */}
-            <Card className="bg-white dark:bg-gray-800">
-              <div className="p-6">
-                <Title className="mb-4">User Feedback</Title>
-                {analytics && analytics.topFeedback.length > 0 ? (
-                  <div className="space-y-3">
-                    {analytics.topFeedback.map((feedback: any, index: number) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${
-                                i < feedback.rating 
-                                  ? 'text-yellow-400 fill-current' 
-                                  : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
+                  <div className="space-y-4">
+                    {recentJobs.map((job) => (
+                      <div
+                        key={job.id}
+                        className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        <div className="flex items-center space-x-4">
+                          {getStatusIcon(job.status)}
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white">
+                              {job.type.charAt(0).toUpperCase() + job.type.slice(1)} Generation
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {job.prompts.length} prompts • {new Date(job.created_at).toLocaleString()}
+                            </p>
+                          </div>
                         </div>
-                        <Text className="font-medium">{feedback.count} reviews</Text>
+                        
+                        <div className="flex items-center space-x-3">
+                          <Badge color={getStatusColor(job.status) as any}>
+                            {job.status}
+                          </Badge>
+                          
+                          {job.status === 'completed' && job.results && job.results.length > 0 && (
+                            <Button
+                              variant="light"
+                              size="xs"
+                              onClick={() => {
+                                // Show results modal or navigate to results page
+                                console.log('View results:', job.results);
+                              }}
+                            >
+                              View Results
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Star className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <Text className="text-gray-500 dark:text-gray-400">No feedback yet</Text>
-                  </div>
                 )}
               </div>
             </Card>
-          </div>
+          </TabPanel>
+          <TabPanel className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Performance Metrics */}
+              <Card className="bg-white dark:bg-gray-800">
+                <div className="p-6">
+                  <Title className="mb-4">Performance Metrics</Title>
+                  {analytics ? (
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <Text>Success Rate</Text>
+                        <Text className="font-medium">{analytics.successRate.toFixed(1)}%</Text>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <Text>Average Processing Time</Text>
+                        <Text className="font-medium">{(analytics.averageProcessingTime / 60).toFixed(1)} minutes</Text>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <Text>Total Jobs Processed</Text>
+                        <Text className="font-medium">{analytics.totalJobs}</Text>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Text className="text-gray-500 dark:text-gray-400">No data available</Text>
+                    </div>
+                  )}
+                </div>
+              </Card>
 
-          {/* Usage Insights */}
-          <Card className="bg-white dark:bg-gray-800">
-            <div className="p-6">
-              <Title className="mb-4">Usage Insights</Title>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                    <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <Text className="text-sm text-gray-500 dark:text-gray-400">Most Popular</Text>
-                  <Text className="font-medium">Video Generation</Text>
+              {/* User Feedback */}
+              <Card className="bg-white dark:bg-gray-800">
+                <div className="p-6">
+                  <Title className="mb-4">User Feedback</Title>
+                  {analytics && analytics.topFeedback.length > 0 ? (
+                    <div className="space-y-3">
+                      {analytics.topFeedback.map((feedback: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${
+                                  i < feedback.rating 
+                                    ? 'text-yellow-400 fill-current' 
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <Text className="font-medium">{feedback.count} reviews</Text>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Star className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <Text className="text-gray-500 dark:text-gray-400">No feedback yet</Text>
+                    </div>
+                  )}
                 </div>
-                
-                <div className="text-center">
-                  <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                    <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </Card>
+            </div>
+
+            {/* Usage Insights */}
+            <Card className="bg-white dark:bg-gray-800">
+              <div className="p-6">
+                <Title className="mb-4">Usage Insights</Title>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                      <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <Text className="text-sm text-gray-500 dark:text-gray-400">Most Popular</Text>
+                    <Text className="font-medium">Video Generation</Text>
                   </div>
-                  <Text className="text-sm text-gray-500 dark:text-gray-400">Peak Usage</Text>
-                  <Text className="font-medium">2-4 PM Daily</Text>
-                </div>
-                
-                <div className="text-center">
-                  <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                    <Zap className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  
+                  <div className="text-center">
+                    <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                      <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <Text className="text-sm text-gray-500 dark:text-gray-400">Peak Usage</Text>
+                    <Text className="font-medium">2-4 PM Daily</Text>
                   </div>
-                  <Text className="text-sm text-gray-500 dark:text-gray-400">Avg. Batch Size</Text>
-                  <Text className="font-medium">3.2 prompts</Text>
+                  
+                  <div className="text-center">
+                    <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                      <Zap className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <Text className="text-sm text-gray-500 dark:text-gray-400">Avg. Batch Size</Text>
+                    <Text className="font-medium">3.2 prompts</Text>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Card>
-        </TabPanel>
+            </Card>
+          </TabPanel>
+        </TabPanels>
       </TabGroup>
     </div>
   );

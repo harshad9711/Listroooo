@@ -13,12 +13,12 @@ export async function generateVoiceover(text: string, voice: string = 'Joanna') 
     const command = new SynthesizeSpeechCommand({
       Text: text,
       OutputFormat: 'mp3',
-      VoiceId: voice,
+      VoiceId: voice as any,
       Engine: 'neural'
     });
 
     const response = await polly.send(command);
-    const audioBlob = new Blob([response.AudioStream], { type: 'audio/mpeg' });
+    const audioBlob = new Blob([response.AudioStream as any || ''], { type: 'audio/mpeg' });
     return URL.createObjectURL(audioBlob);
   } catch (error) {
     console.error('Voiceover generation error:', error);

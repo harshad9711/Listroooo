@@ -1,7 +1,14 @@
-import React from "react";
-
-
+import React, { useState } from "react";
+import { Card, Title, Text, Button, Textarea } from '@tremor/react';
+import { 
+  ThumbsUp, 
+  ThumbsDown, 
+  MessageSquare, 
+  Star, 
+  Send 
+} from 'lucide-react';
 import toast from 'react-hot-toast';
+import { veo3Production } from '../../services/veo3Production';
 
 interface Veo3FeedbackProps {
   resultId: string;

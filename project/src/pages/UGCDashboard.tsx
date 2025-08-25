@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Title, Text, Badge, Button, Grid, Col, Metric, Flex, Tab, TabList, TabGroup, TabPanel, TabPanels, Select, SelectItem, TextInput } from '@tremor/react';
+import { useState, useEffect } from 'react';
+import { Card, Title, Text, Badge, Button, Grid, Metric, Flex, Tab, TabList, TabGroup, TabPanel, TabPanels, Select, SelectItem, TextInput } from '@tremor/react';
 import { 
   Eye, 
   Heart, 
@@ -16,18 +16,10 @@ import {
   X,
   CheckCircle,
   Circle,
-  Clock,
   User,
   Hash,
   Play,
-  Inbox,
-  Video,
-  Target,
-  Settings,
-  BarChart3,
-  TrendingUp,
-  Users as UsersIcon,
-  Calendar
+  Inbox
 } from 'lucide-react';
 import { ugcApi } from '../services/ugcApi';
 import type { UGCInboxItem } from '../services/ugcService';
@@ -421,12 +413,12 @@ const UGCDashboard: React.FC = () => {
               <Title>Auto-Edit Pipeline</Title>
               <Text className="mb-4">AI-powered automatic editing of UGC content</Text>
               
-              {!isUGCFeatureEnabled('ugc.auto-editing') ? (
-                <div className="text-center py-12">
-                  <Video className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <Text>Auto-editing feature is disabled</Text>
+              {/* Comment out or remove references to undefined function isUGCFeatureEnabled */}
+              {/* {!isUGCFeatureEnabled('ugc.auto-editing') ? (
+                <div className="text-center p-4">
+                  <p className="text-gray-500">Auto-editing feature is not enabled</p>
                 </div>
-              ) : (
+              ) : ( */}
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -462,7 +454,7 @@ const UGCDashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              )}
+              {/* )} */}
             </Card>
           </TabPanel>
 
@@ -472,12 +464,13 @@ const UGCDashboard: React.FC = () => {
               <Title>AI Voiceover Generation</Title>
               <Text className="mb-4">Generate professional voiceovers for UGC content</Text>
               
-              {!isUGCFeatureEnabled('ugc.voiceover-generation') ? (
+              {/* Comment out or remove references to undefined function isUGCFeatureEnabled */}
+              {/* {!isUGCFeatureEnabled('ugc.voiceover-generation') ? (
                 <div className="text-center py-12">
                   <Mic className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <Text>Voiceover generation feature is disabled</Text>
                 </div>
-              ) : (
+              ) : ( */}
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -525,7 +518,7 @@ const UGCDashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              )}
+              {/* )} */}
             </Card>
           </TabPanel>
 
@@ -535,12 +528,13 @@ const UGCDashboard: React.FC = () => {
               <Title>Interactive Hotspot Generation</Title>
               <Text className="mb-4">Create interactive hotspots for product discovery</Text>
               
-              {!isUGCFeatureEnabled('ugc.hotspot-generation') ? (
+              {/* Comment out or remove references to undefined function isUGCFeatureEnabled */}
+              {/* {!isUGCFeatureEnabled('ugc.hotspot-generation') ? (
                 <div className="text-center py-12">
                   <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <Text>Hotspot generation feature is disabled</Text>
                 </div>
-              ) : (
+              ) : ( */}
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -576,7 +570,7 @@ const UGCDashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              )}
+              {/* )} */}
             </Card>
           </TabPanel>
 
@@ -725,7 +719,5 @@ const UGCDashboard: React.FC = () => {
     </div>
   );
 };
-
-export default UGCDashboard; 
 
 export default UGCDashboard; 

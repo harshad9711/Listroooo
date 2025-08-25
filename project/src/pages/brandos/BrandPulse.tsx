@@ -1,4 +1,4 @@
-import React from "react";
+import { Calendar, Download, BarChart2 } from 'lucide-react';
 
 
 export default function BrandPulse() {

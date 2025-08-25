@@ -74,20 +74,14 @@ export interface TikTokTrendingVideo {
 }
 
 export class TikTokService {
-  private clientKey: string;
-  private clientSecret: string;
   private accessToken: string;
   private apiBaseUrl = 'https://open.tiktokapis.com/v2';
 
   constructor() {
-    this.clientKey = process.env.REACT_APP_TIKTOK_CLIENT_KEY || '';
-    this.clientSecret = process.env.REACT_APP_TIKTOK_CLIENT_SECRET || '';
     this.accessToken = process.env.REACT_APP_TIKTOK_ACCESS_TOKEN || '';
   }
 
-  setCredentials(clientKey: string, clientSecret: string, accessToken: string) {
-    this.clientKey = clientKey;
-    this.clientSecret = clientSecret;
+  setCredentials(accessToken: string) {
     this.accessToken = accessToken;
   }
 

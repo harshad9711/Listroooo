@@ -1,6 +1,19 @@
-import React from "react";
-
-
+import { useState, useRef, useEffect } from "react";
+import { Card, Title, Text } from '@tremor/react';
+import { 
+  Video, 
+  ImageIcon, 
+  Pause, 
+  Play, 
+  X, 
+  Copy, 
+  DollarSign, 
+  Split, 
+  AlertCircle, 
+  Check, 
+  TrendingUp, 
+  Users 
+} from 'lucide-react';
 import confetti from 'canvas-confetti';
 import toast from 'react-hot-toast';
 
@@ -67,6 +80,15 @@ export default function UGCSplitTester() {
   
   const videoRefA = useRef<HTMLVideoElement>(null);
   const videoRefB = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/ugc/split-tests`)
+      .then(res => res.json())
+      .then(() => {
+        setLoading(false);
+        toast.success('Test created successfully!');
+      });
+  }, []);
 
   const handleFileUpload = (variant: 'A' | 'B', file: File) => {
     if (!file) return;

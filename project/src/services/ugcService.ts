@@ -1,6 +1,46 @@
 import { supabase } from '../lib/supabase';
-import { instagramService, type InstagramMedia } from './instagramService';
-import { tiktokService, type TikTokVideo } from './tiktokService';
+import { instagramService } from './instagramService';
+import { tiktokService } from './tiktokService';
+
+// Supabase Edge Functions configuration
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Helper function to get auth token
+const getAuthToken = (): string | null => {
+  // Get token from Supabase auth
+  return localStorage.getItem('sb-auth-token') || localStorage.getItem('supabase.auth.token');
+};
+
+// Helper function for Supabase Edge Function calls
+const supabaseCall = async (functionName: string, options: RequestInit = {}) => {
+  const token = getAuthToken();
+  const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
+  
+  const config: RequestInit = {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...options.headers,
+    },
+    ...options,
+  };
+
+  try {
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API call failed: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(`Supabase Edge Function call error for ${functionName}:`, error);
+    throw error;
+  }
+};
 
 // UGC Content Types
 export interface UGCContent {
@@ -37,6 +77,7 @@ export interface UGCContent {
   quality_score?: number;
   created_at: string;
   updated_at: string;
+  discovered_at?: string;
 }
 
 export interface UGCCampaign {
@@ -167,97 +208,14 @@ export interface UGCInboxItem {
   updated_at: string;
 }
 
-// Social Listening Crawler
+// Social Listening Crawler (Legacy - replaced with real APIs)
+// @ts-ignore
 class SocialListeningCrawler {
-  private platforms = {
-    instagram: {
-      apiEndpoint: 'https://graph.instagram.com/v12.0',
-      searchEndpoint: '/ig_hashtag_search',
-      mediaEndpoint: '/ig_hashtag_media'
-    },
-    tiktok: {
-      apiEndpoint: 'https://open.tiktokapis.com/v2',
-      searchEndpoint: '/video/query/',
-      hashtagEndpoint: '/hashtag/search/'
-    },
-    youtube: {
-      apiEndpoint: 'https://www.googleapis.com/youtube/v3',
-      searchEndpoint: '/search',
-      videoEndpoint: '/videos'
-    },
-    twitter: {
-      apiEndpoint: 'https://api.twitter.com/2',
-      searchEndpoint: '/tweets/search/recent',
-      userEndpoint: '/users'
-    }
-  };
-
-  async crawlPlatform(platform: string, hashtags: string[], brandKeywords: string[]): Promise<UGCContent[]> {
-    try {
-      console.log(`Crawling ${platform} for hashtags: ${hashtags.join(', ')}`);
-      
-      const discoveredContent: UGCContent[] = [];
-      
-      for (const hashtag of hashtags) {
-        const content = await this.searchByHashtag(platform, hashtag, brandKeywords);
-        discoveredContent.push(...content);
-      }
-      
-      // Remove duplicates based on content URL
-      const uniqueContent = discoveredContent.filter((content, index, self) => 
-        index === self.findIndex(c => c.content_url === content.content_url)
-      );
-      
-      console.log(`Discovered ${uniqueContent.length} unique pieces of content from ${platform}`);
-      return uniqueContent;
-    } catch (error) {
-      console.error(`Error crawling ${platform}:`, error);
-      return [];
-    }
-  }
-
-  private async searchByHashtag(platform: string, hashtag: string, brandKeywords: string[]): Promise<UGCContent[]> {
-    // Simulated API calls - replace with actual platform APIs
-    const mockContent: UGCContent[] = [
-      {
-        id: `mock_${platform}_${hashtag}_1`,
-        platform: platform as any,
-        content_type: 'video',
-        author: {
-          username: `user_${Math.floor(Math.random() * 1000)}`,
-          followers: Math.floor(Math.random() * 100000),
-          verified: Math.random() > 0.8
-        },
-        content: {
-          url: `https://${platform}.com/mock_content_1`,
-          thumbnail_url: `https://picsum.photos/300/400?random=${Math.random()}`,
-          duration: Math.floor(Math.random() * 60) + 15,
-          caption: `Amazing product! #${hashtag} ${brandKeywords.join(' ')}`,
-          hashtags: [hashtag, ...brandKeywords],
-          mentions: [],
-          location: 'New York, NY'
-        },
-        engagement: {
-          likes: Math.floor(Math.random() * 10000),
-          comments: Math.floor(Math.random() * 500),
-          shares: Math.floor(Math.random() * 1000),
-          views: Math.floor(Math.random() * 100000),
-          reach: Math.floor(Math.random() * 500000)
-        },
-        rights_status: 'pending',
-        brand_tags: brandKeywords,
-        sentiment_score: Math.random() * 2 - 1, // -1 to 1
-        quality_score: Math.random() * 10, // 0 to 10
-        created_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-        discovered_at: new Date().toISOString()
-      }
-    ];
-
-    return mockContent;
-  }
+  // Implementation removed - now using real Supabase Edge Functions
 }
 
-// Rights Management API
+// Rights Management API (Legacy - replaced with real APIs)
+// @ts-ignore
 class RightsManagementAPI {
   async requestRights(contentId: string, brandId: string, terms: any): Promise<{ success: boolean; message: string }> {
     try {
@@ -424,14 +382,6 @@ class AutoEditingPipeline {
 
 // AI Voiceover Service
 class AIVoiceoverService {
-  private voiceTypes = {
-    male: { voice_id: 'voice_male_1', speed: 1.0, pitch: 0 },
-    female: { voice_id: 'voice_female_1', speed: 1.0, pitch: 0 },
-    neutral: { voice_id: 'voice_neutral_1', speed: 1.0, pitch: 0 },
-    energetic: { voice_id: 'voice_energetic_1', speed: 1.1, pitch: 2 },
-    calm: { voice_id: 'voice_calm_1', speed: 0.9, pitch: -1 }
-  };
-
   async generateVoiceover(contentId: string, script: string, voiceType: string = 'neutral', language: string = 'en'): Promise<UGCVoiceover> {
     try {
       console.log(`Generating voiceover for content ${contentId}`);
@@ -493,7 +443,7 @@ class AIVoiceoverService {
 
   async generateScript(content: UGCContent, brandGuidelines: any): Promise<string> {
     // AI-powered script generation based on content and brand guidelines
-    const baseScript = `Check out this amazing content! ${content.content.caption || 'Incredible product showcase.'} Don't miss out on this opportunity!`;
+    const baseScript = `Check out this amazing content! ${content.caption || 'Incredible product showcase.'} Don't miss out on this opportunity!`;
     
     if (brandGuidelines?.tone) {
       // Adjust tone based on brand guidelines
@@ -579,7 +529,7 @@ class HotspotGenerator {
     }
   }
 
-  async detectProducts(content: UGCContent): Promise<any[]> {
+  async detectProducts(_content: UGCContent): Promise<any[]> {
     // AI-powered product detection
     // This would integrate with computer vision APIs
     const mockProducts = [
@@ -594,8 +544,6 @@ class HotspotGenerator {
 
 // Main UGC Service
 export class UGCService {
-  private crawler = new SocialListeningCrawler();
-  private rightsAPI = new RightsManagementAPI();
   private editingPipeline = new AutoEditingPipeline();
   private voiceoverService = new AIVoiceoverService();
   private hotspotGenerator = new HotspotGenerator();
@@ -826,9 +774,9 @@ export class UGCService {
     }
   }
 
-  async setTikTokCredentials(clientKey: string, clientSecret: string, accessToken: string): Promise<void> {
+  async setTikTokCredentials(clientKey: string, _clientSecret: string): Promise<void> {
     try {
-      tiktokService.setCredentials(clientKey, clientSecret, accessToken);
+      tiktokService.setCredentials(clientKey);
     } catch (error) {
       console.error('Error setting TikTok credentials:', error);
       throw error;
@@ -927,7 +875,7 @@ export class UGCService {
   async rejectUGCContent(id: string, reason?: string): Promise<UGCContent> {
     return this.updateUGCContent(id, { 
       status: 'rejected',
-      tags: reason ? [...(await this.getUGCContent({ id })).tags || [], `rejected: ${reason}`] : []
+      tags: reason ? [`rejected: ${reason}`] : []
     });
   }
 
@@ -1043,12 +991,12 @@ export class UGCService {
 
       const top_platforms = Object.entries(platformCounts)
         .map(([platform, count]) => ({ platform, count }))
-        .sort((a, b) => b.count - a.count)
+        .sort((a, b) => (b.count as number) - (a.count as number))
         .slice(0, 5);
 
       // Top hashtags
       const hashtagCounts = content.reduce((acc, c) => {
-        c.hashtags?.forEach(hashtag => {
+        c.hashtags?.forEach((hashtag: string) => {
           acc[hashtag] = (acc[hashtag] || 0) + 1;
         });
         return acc;
@@ -1056,7 +1004,7 @@ export class UGCService {
 
       const top_hashtags = Object.entries(hashtagCounts)
         .map(([hashtag, count]) => ({ hashtag, count }))
-        .sort((a, b) => b.count - a.count)
+        .sort((a, b) => (b.count as number) - (a.count as number))
         .slice(0, 10);
 
       // Content by status
@@ -1074,8 +1022,8 @@ export class UGCService {
         rejected_content,
         total_engagement,
         average_engagement_rate,
-        top_platforms,
-        top_hashtags,
+        top_platforms: top_platforms.map(p => ({ ...p, count: p.count as number })),
+        top_hashtags: top_hashtags.map(h => ({ ...h, count: h.count as number })),
         engagement_trend: [], // Would need time-series data for this
         content_by_status
       };
@@ -1114,7 +1062,7 @@ export class UGCService {
   // Utility Methods
   private extractBrandMentions(text: string): string[] {
     // Simple brand mention extraction - could be enhanced with AI
-    const brandMentions = [];
+    const brandMentions: string[] = [];
     const commonBrands = ['nike', 'adidas', 'apple', 'samsung', 'coca-cola', 'mcdonalds'];
     
     commonBrands.forEach(brand => {
@@ -1137,9 +1085,9 @@ export class UGCService {
   }
 
   // Set Instagram Credentials
-  async setInstagramCredentials(accessToken: string, businessAccountId: string, pageId: string): Promise<void> {
+  async setInstagramCredentials(accessToken: string, businessAccountId: string): Promise<void> {
     try {
-      instagramService.setCredentials(accessToken, businessAccountId, pageId);
+      instagramService.setCredentials(accessToken, businessAccountId);
     } catch (error) {
       console.error('Error setting Instagram credentials:', error);
       throw error;
@@ -1149,25 +1097,50 @@ export class UGCService {
   // Social Listening
   async discoverContent(hashtags: string[], brandKeywords: string[], platforms: string[] = ['instagram', 'tiktok']): Promise<UGCContent[]> {
     try {
-      const allContent: UGCContent[] = [];
+      console.log('🔍 Discovering UGC content...', { hashtags, brandKeywords, platforms });
+      
+      const response = await supabaseCall('ugc-discover', {
+        method: 'POST',
+        body: JSON.stringify({
+          hashtags,
+          keywords: brandKeywords,
+          platforms,
+          limit: 20
+        })
+      });
 
-      for (const platform of platforms) {
-        const content = await this.crawler.crawlPlatform(platform, hashtags, brandKeywords);
-        allContent.push(...content);
+      if (response.success && response.content) {
+        // Transform the API response to match our interface
+        return response.content.map((item: any) => ({
+          id: item.id,
+          platform: item.platform,
+          platform_content_id: item.platform_content_id,
+          content_type: item.content_type || 'image',
+          content_url: item.content_url,
+          caption: item.caption,
+          username: item.creator_username,
+          hashtags: item.hashtags || [],
+          mentions: [],
+          engagement_metrics: {
+            likes: 0,
+            comments: 0,
+            shares: 0,
+            views: 0,
+            saves: 0
+          },
+          tags: item.hashtags || [],
+          status: 'pending',
+          source: 'api',
+          brand_mentions: brandKeywords,
+          sentiment_score: 0,
+          quality_score: 5,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          discovered_at: new Date().toISOString()
+        }));
       }
-
-      // Save discovered content to database
-      if (allContent.length > 0) {
-        const { error } = await supabase
-          .from('ugc_content')
-          .insert(allContent);
-
-        if (error) {
-          console.error('Error saving discovered content:', error);
-        }
-      }
-
-      return allContent;
+      
+      return [];
     } catch (error) {
       console.error('Error discovering content:', error);
       return [];
@@ -1176,15 +1149,60 @@ export class UGCService {
 
   // Rights Management
   async requestRights(contentId: string, brandId: string, terms: any): Promise<{ success: boolean; message: string }> {
-    return this.rightsAPI.requestRights(contentId, brandId, terms);
+    try {
+      const response = await supabaseCall('ugc-rights-request', {
+        method: 'POST',
+        body: JSON.stringify({
+          contentId,
+          brandId,
+          terms
+        })
+      });
+
+      if (response.success) {
+        return { success: true, message: response.message || 'Rights request sent successfully' };
+      } else {
+        return { success: false, message: response.error || 'Failed to send rights request' };
+      }
+    } catch (error) {
+      console.error('Error requesting rights:', error);
+      return { success: false, message: 'Failed to send rights request' };
+    }
   }
 
   async checkRightsStatus(contentId: string): Promise<string> {
-    return this.rightsAPI.checkRightsStatus(contentId);
+    try {
+      const { data } = await supabase
+        .from('ugc_rights_requests')
+        .select('status')
+        .eq('content_id', contentId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      return data?.status || 'unknown';
+    } catch (error) {
+      console.error('Error checking rights status:', error);
+      return 'unknown';
+    }
   }
 
   async approveRights(contentId: string): Promise<{ success: boolean; message: string }> {
-    return this.rightsAPI.approveRights(contentId);
+    try {
+      const { error } = await supabase
+        .from('ugc_rights_requests')
+        .update({ status: 'approved' })
+        .eq('content_id', contentId);
+
+      if (error) {
+        return { success: false, message: 'Failed to approve rights' };
+      }
+
+      return { success: true, message: 'Rights approved successfully' };
+    } catch (error) {
+      console.error('Error approving rights:', error);
+      return { success: false, message: 'Failed to approve rights' };
+    }
   }
 
   // Auto-Editing
@@ -1226,10 +1244,10 @@ export class UGCService {
         throw new Error('Content not found');
       }
 
-      script = this.voiceoverService.generateScript(content, {});
+      script = await this.voiceoverService.generateScript(content, {});
     }
 
-    return this.voiceoverService.generateVoiceover(contentId, script, voiceType);
+    return this.voiceoverService.generateVoiceover(contentId, script || '', voiceType);
   }
 
   async getVoiceovers(contentId: string): Promise<UGCVoiceover[]> {
@@ -1271,26 +1289,34 @@ export class UGCService {
   }
 
   // Inbox Management
-  async getInbox(status?: string): Promise<UGCInboxItem[]> {
-    let query = supabase
-      .from('ugc_inbox')
-      .select(`
-        *,
-        content:ugc_content(*),
-        edits:ugc_edits(*),
-        voiceovers:ugc_voiceovers(*),
-        hotspots:ugc_hotspots(*)
-      `)
-      .order('created_at', { ascending: false });
+  async getInbox(_status?: string): Promise<UGCInboxItem[]> {
+    try {
+      const { data, error } = await supabase
+        .from('ugc_content')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (status) {
-      query = query.eq('status', status);
+      if (error) {
+        console.error('Failed to fetch inbox:', error);
+        return [];
+      }
+
+      // Transform to inbox items
+      return (data || []).map((content: any) => ({
+        id: content.id,
+        content: content,
+        edits: [],
+        voiceovers: [],
+        hotspots: [],
+        status: content.status || 'new',
+        notes: '',
+        created_at: content.created_at,
+        updated_at: content.updated_at
+      }));
+    } catch (error) {
+      console.error('Failed to fetch inbox:', error);
+      return [];
     }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-    return data || [];
   }
 
   async updateInboxStatus(itemId: string, status: string, notes?: string): Promise<void> {
@@ -1321,57 +1347,24 @@ export class UGCService {
 
   // Analytics
   async getAnalytics(): Promise<any> {
-    const { data: content } = await supabase
-      .from('ugc_content')
-      .select('*');
+    try {
+      const response = await supabaseCall('ugc-analytics', {
+        method: 'POST',
+        body: JSON.stringify({
+          dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          dateTo: new Date().toISOString().split('T')[0]
+        })
+      });
 
-    const { data: inbox } = await supabase
-      .from('ugc_inbox')
-      .select('*');
+      if (response.success && response.analytics) {
+        return response.analytics;
+      }
 
-    const { data: edits } = await supabase
-      .from('ugc_edits')
-      .select('*');
-
-    const { data: voiceovers } = await supabase
-      .from('ugc_voiceovers')
-      .select('*');
-
-    return {
-      totalContent: content?.length || 0,
-      totalInboxItems: inbox?.length || 0,
-      totalEdits: edits?.length || 0,
-      totalVoiceovers: voiceovers?.length || 0,
-      contentByPlatform: this.groupByPlatform(content || []),
-      contentByStatus: this.groupByStatus(inbox || []),
-      recentActivity: this.getRecentActivity(content || [], edits || [], voiceovers || [])
-    };
-  }
-
-  private groupByPlatform(content: UGCContent[]): Record<string, number> {
-    return content.reduce((acc, item) => {
-      acc[item.platform] = (acc[item.platform] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-  }
-
-  private groupByStatus(inbox: UGCInboxItem[]): Record<string, number> {
-    return inbox.reduce((acc, item) => {
-      acc[item.status] = (acc[item.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-  }
-
-  private getRecentActivity(content: UGCContent[], edits: UGCEdit[], voiceovers: UGCVoiceover[]): any[] {
-    const allActivity = [
-      ...content.map(c => ({ type: 'discovered', item: c, date: c.created_at })),
-      ...edits.map(e => ({ type: 'edit', item: e, date: e.created_at })),
-      ...voiceovers.map(v => ({ type: 'voiceover', item: v, date: v.created_at }))
-    ];
-
-    return allActivity
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 10);
+      return {};
+    } catch (error) {
+      console.error('Failed to fetch analytics:', error);
+      return {};
+    }
   }
 }
 

@@ -1,34 +1,66 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { Card } from '@tremor/react';
 import {
-  BarChart2, TrendingUp, Users, Mail, Send, Brain, Calendar, Download, Filter, ArrowUpRight, 
+  BarChart2, TrendingUp, Mail, Send, Brain, Calendar, Download, Filter, ArrowUpRight, 
   Sparkles, MessageCircle, Clock, Target, Zap, BarChart as ChartBar, Shield, LineChart, 
   Layers, Type, Video, Wand2, History, Clapperboard, Film, Camera, Plus,
   Database, Search, Activity, UserCheck
 } from 'lucide-react';
-import VideoGenerator from '../components/scanner/VideoGenerator';
-import Veo3PromptForm from '../components/scanner/Veo3PromptForm';
-import Veo3Integration from '../components/scanner/Veo3Integration';
 import UGCSplitTester from '../components/scanner/UGCSplitTester';
 
+// Temporary fetchMarketingMetrics function - replace with actual implementation
+const fetchMarketingMetrics = async () => {
+  try {
+    console.log("fetchMarketingMetrics: Starting data fetch...");
+    
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Return mock data structure
+    return {
+      campaigns: [
+        { id: 1, name: "Demo Campaign 1", status: "active", impressions: 1000 },
+        { id: 2, name: "Demo Campaign 2", status: "paused", impressions: 500 }
+      ],
+      metrics: {
+        totalImpressions: 1500,
+        totalClicks: 150,
+        totalConversions: 15,
+        ctr: 0.1,
+        conversionRate: 0.1
+      },
+      impressions: 1500,
+      roas: 3.2,
+      conversions: 15,
+      revenue: 45000,
+      success: true
+    };
+  } catch (error) {
+    console.error("Error in fetchMarketingMetrics:", error);
+    return {
+      campaigns: [],
+      metrics: null,
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+};
+
 const MarketingDashboard = () => {
-  const [dateRange, setDateRange] = useState('7d');
   const [platform, setPlatform] = useState('all');
-  const [metrics, setMetrics] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [metrics, setMetrics] = useState<any>(null);
 
   useEffect(() => {
     loadMarketingData();
-  }, [dateRange]);
+  }, []);
 
   const loadMarketingData = async () => {
-    setLoading(true);
     try {
-      const data = await fetchMarketingMetrics(dateRange);
+      const data = await fetchMarketingMetrics(); // Assuming a default date range for now
       setMetrics(data);
     } catch (error) {
       console.error('Failed to load marketing data:', error);
     }
-    setLoading(false);
   };
 
   const marketingIntelFeatures = [
@@ -38,7 +70,7 @@ const MarketingDashboard = () => {
       icon: <Database className="h-6 w-6 text-indigo-500" />,
       description: 'Unified multichannel analytics',
       metrics: {
-        value: metrics?.impressions?.toLocaleString() || '0',
+        value: metrics?.metrics?.totalImpressions?.toLocaleString() || '0',
         label: 'Total Impressions'
       }
     },
@@ -58,7 +90,7 @@ const MarketingDashboard = () => {
       icon: <UserCheck className="h-6 w-6 text-purple-500" />,
       description: 'AI-powered customer clustering',
       metrics: {
-        value: metrics?.conversions?.toLocaleString() || '0',
+        value: metrics?.metrics?.totalConversions?.toLocaleString() || '0',
         label: 'Conversions'
       }
     },
@@ -254,8 +286,8 @@ const MarketingDashboard = () => {
         <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
           <div className="relative">
             <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
+              value="7d" // Assuming a default date range for now
+              onChange={() => {}}
               className="form-select pl-9"
             >
               <option value="7d">Last 7 days</option>

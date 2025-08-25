@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Title } from '@tremor/react';
 import { 
   MapPin, 
@@ -95,79 +95,22 @@ const mockJourneyStages: JourneyStage[] = [
   }
 ];
 
-const mockCustomerSegments: CustomerSegment[] = [
-  {
-    id: '1',
-    name: 'Tech Enthusiasts',
-    size: 2847,
-    conversionRate: 8.4,
-    avgOrderValue: 156.78,
-    ltv: 892.45,
-    characteristics: ['Early adopters', 'High engagement', 'Price insensitive', 'Social sharers']
-  },
-  {
-    id: '2',
-    name: 'Budget Conscious',
-    size: 4521,
-    conversionRate: 12.1,
-    avgOrderValue: 67.23,
-    ltv: 234.67,
-    characteristics: ['Price sensitive', 'Deal seekers', 'Comparison shoppers', 'Loyal when satisfied']
-  },
-  {
-    id: '3',
-    name: 'Premium Buyers',
-    size: 1893,
-    conversionRate: 15.7,
-    avgOrderValue: 289.45,
-    ltv: 1456.78,
-    characteristics: ['Quality focused', 'Brand loyal', 'High LTV', 'Referral generators']
-  },
-  {
-    id: '4',
-    name: 'Casual Shoppers',
-    size: 6234,
-    conversionRate: 5.2,
-    avgOrderValue: 89.12,
-    ltv: 178.34,
-    characteristics: ['Occasional buyers', 'Impulse purchases', 'Social influenced', 'Mobile first']
-  }
-];
-
-const mockJourneyPaths: JourneyPath[] = [
-  {
-    id: '1',
-    customer: 'John Doe',
-    segment: 'Tech Enthusiasts',
-    stages: [
-      { stage: 'awareness', timestamp: '2025-06-01T10:00:00Z', touchpoint: 'Instagram Ad', action: 'Clicked ad' },
-      { stage: 'consideration', timestamp: '2025-06-01T10:15:00Z', touchpoint: 'Product Page', action: 'Viewed product' },
-      { stage: 'consideration', timestamp: '2025-06-02T14:30:00Z', touchpoint: 'Reviews', action: 'Read reviews' },
-      { stage: 'intent', timestamp: '2025-06-03T09:45:00Z', touchpoint: 'Cart', action: 'Added to cart' },
-      { stage: 'purchase', timestamp: '2025-06-03T10:00:00Z', touchpoint: 'Checkout', action: 'Completed purchase' }
-    ],
-    outcome: 'converted',
-    value: 149.99
-  },
-  {
-    id: '2',
-    customer: 'Jane Smith',
-    segment: 'Budget Conscious',
-    stages: [
-      { stage: 'awareness', timestamp: '2025-06-04T16:20:00Z', touchpoint: 'Google Search', action: 'Searched product' },
-      { stage: 'consideration', timestamp: '2025-06-04T16:25:00Z', touchpoint: 'Product Page', action: 'Viewed product' },
-      { stage: 'consideration', timestamp: '2025-06-05T11:10:00Z', touchpoint: 'Comparison Site', action: 'Compared prices' },
-      { stage: 'intent', timestamp: '2025-06-05T11:30:00Z', touchpoint: 'Wishlist', action: 'Added to wishlist' }
-    ],
-    outcome: 'ongoing'
-  }
-];
-
 export default function CustomerJourneyMapping() {
   const [selectedSegment, setSelectedSegment] = useState('all');
   const [selectedStage, setSelectedStage] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [customerSegments, setCustomerSegments] = useState<CustomerSegment[]>([]);
+  const [journeyPaths, setJourneyPaths] = useState<JourneyPath[]>([]);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/insights/customer-journey`)
+      .then(res => res.json())
+      .then(data => {
+        setCustomerSegments(data.segments || []);
+        setJourneyPaths(data.paths || []);
+      });
+  }, []);
 
   const handleRefreshData = async () => {
     setLoading(true);
@@ -258,7 +201,7 @@ export default function CustomerJourneyMapping() {
                   className="form-select"
                 >
                   <option value="all">All Segments</option>
-                  {mockCustomerSegments.map(segment => (
+                  {customerSegments.map(segment => (
                     <option key={segment.id} value={segment.id}>
                       {segment.name}
                     </option>
@@ -371,7 +314,7 @@ export default function CustomerJourneyMapping() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {mockCustomerSegments.map((segment) => (
+            {customerSegments.map((segment) => (
               <div
                 key={segment.id}
                 className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4"
@@ -436,7 +379,7 @@ export default function CustomerJourneyMapping() {
           </div>
 
           <div className="space-y-6">
-            {mockJourneyPaths.map((journey) => (
+            {journeyPaths.map((journey) => (
               <div
                 key={journey.id}
                 className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"

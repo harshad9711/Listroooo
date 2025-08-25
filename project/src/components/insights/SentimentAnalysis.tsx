@@ -1,5 +1,5 @@
-import React from "react";
-
+import { useState, useEffect } from "react";
+import { Card, Title } from '@tremor/react';
 
 import {
   MessageSquare, 
@@ -34,77 +34,22 @@ interface TrendingTopic {
   region?: string;
 }
 
-const mockSentimentData: SentimentData[] = [
-  {
-    platform: 'Twitter',
-    mentions: 1247,
-    sentiment: 'positive',
-    score: 78,
-    change: 5.2,
-    topics: ['product quality', 'customer service', 'fast shipping']
-  },
-  {
-    platform: 'Reddit',
-    mentions: 892,
-    sentiment: 'positive',
-    score: 72,
-    change: 3.1,
-    topics: ['value for money', 'durability', 'design']
-  },
-  {
-    platform: 'Facebook',
-    mentions: 654,
-    sentiment: 'neutral',
-    score: 65,
-    change: -2.3,
-    topics: ['shipping delays', 'customer support', 'product features']
-  },
-  {
-    platform: 'Instagram',
-    mentions: 543,
-    sentiment: 'positive',
-    score: 82,
-    change: 8.7,
-    topics: ['aesthetics', 'unboxing', 'lifestyle']
-  }
-];
-
-const mockTrendingTopics: TrendingTopic[] = [
-  {
-    topic: 'Shipping delays in Europe',
-    mentions: 234,
-    sentiment: 'negative',
-    change: 45.2,
-    region: 'Europe'
-  },
-  {
-    topic: 'Product quality improvements',
-    mentions: 189,
-    sentiment: 'positive',
-    change: 23.1,
-    region: 'Global'
-  },
-  {
-    topic: 'Customer service response time',
-    mentions: 156,
-    sentiment: 'neutral',
-    change: 12.5,
-    region: 'North America'
-  },
-  {
-    topic: 'New product features',
-    mentions: 134,
-    sentiment: 'positive',
-    change: 67.8,
-    region: 'Asia'
-  }
-];
-
 export default function SentimentAnalysis() {
   const [loading, setLoading] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState('all');
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [sentimentData, setSentimentData] = useState<SentimentData[]>([]);
+  const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([]);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/ugc/sentiment`)
+      .then(res => res.json())
+      .then(data => {
+        setSentimentData(data.sentiment || []);
+        setTrendingTopics(data.trending || []);
+      });
+  }, []);
 
   const handleRefreshData = async () => {
     setLoading(true);
@@ -298,7 +243,7 @@ export default function SentimentAnalysis() {
           </div>
 
           <div className="space-y-4">
-            {mockSentimentData.map((platform, index) => (
+            {sentimentData.map((platform, index) => (
               <div
                 key={index}
                 className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4"
@@ -390,7 +335,7 @@ export default function SentimentAnalysis() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {mockTrendingTopics.map((topic, index) => (
+                {trendingTopics.map((topic, index) => (
                   <tr key={index}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">

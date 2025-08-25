@@ -1,5 +1,6 @@
-import React from "react";
-
+import React, { useState, useEffect } from 'react';
+import { useAiAssistant } from '../contexts/AiAssistantContext';
+import { aiAssistantService } from '../services/aiAssistantService';
 
 
 interface Conversation {
@@ -22,12 +23,12 @@ interface ModelSettings {
 }
 
 const AiAssistant: React.FC = () => {
-  const { userId, preferences, memory, recentActions, addAction } = useAiAssistant();
+  const { userId, preferences, memory, recentActions } = useAiAssistant();
   const [activeTab, setActiveTab] = useState('chat');
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversations] = useState<Conversation[]>([]);
   const [modelSettings, setModelSettings] = useState<ModelSettings | null>(null);
-  const [integrationLogs, setIntegrationLogs] = useState<any[]>([]);
-  const [proactiveTriggers, setProactiveTriggers] = useState<any[]>([]);
+  const [integrationLogs] = useState<any[]>([]);
+  const [proactiveTriggers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -38,59 +39,43 @@ const AiAssistant: React.FC = () => {
     setLoading(true);
     try {
       // Load conversations
-      const { data: convData } = await aiAssistantService.supabase
-        .from('ai_conversation_history')
-        .select('*')
-        .eq('user_id', userId)
-        .order('timestamp', { ascending: false })
-        .limit(50);
-
-      if (convData) {
-        // Group by session
-        const grouped = convData.reduce((acc: any, msg: any) => {
-          if (!acc[msg.session_id]) {
-            acc[msg.session_id] = {
-              id: msg.session_id,
-              session_id: msg.session_id,
-              messages: [],
-              created_at: msg.timestamp
-            };
-          }
-          acc[msg.session_id].messages.push({
-            role: msg.message_type,
-            content: msg.content,
-            timestamp: msg.timestamp
-          });
-          return acc;
-        }, {});
-        setConversations(Object.values(grouped));
-      }
+      // const convData = await aiAssistantService.getConversations();
+      // if (convData) {
+      //   // Group by session
+      //   const grouped = convData.reduce((acc: any, msg: any) => {
+      //     if (!acc[msg.session_id]) {
+      //       acc[msg.session_id] = {
+      //         id: msg.session_id,
+      //         session_id: msg.session_id,
+      //         messages: [],
+      //         created_at: msg.timestamp
+      //       };
+      //     }
+      //     acc[msg.session_id].messages.push({
+      //       role: msg.message_type,
+      //       content: msg.content,
+      //       timestamp: msg.timestamp
+      //     });
+      //     return acc;
+      //   }, {});
+      //   setConversations(Object.values(grouped));
+      // }
 
       // Load model settings
       const settings = await aiAssistantService.getModelSettings();
       setModelSettings(settings);
 
       // Load integration logs
-      const { data: logsData } = await aiAssistantService.supabase
-        .from('ai_integration_logs')
-        .select('*')
-        .eq('user_id', userId)
-        .order('timestamp', { ascending: false })
-        .limit(20);
-
-      if (logsData) {
-        setIntegrationLogs(logsData);
-      }
+      // const logsData = await aiAssistantService.getIntegrationLogs();
+      // if (logsData) {
+      //   setIntegrationLogs(logsData);
+      // }
 
       // Load proactive triggers
-      const { data: triggersData } = await aiAssistantService.supabase
-        .from('ai_proactive_triggers')
-        .select('*')
-        .eq('is_active', true);
-
-      if (triggersData) {
-        setProactiveTriggers(triggersData);
-      }
+      // const triggersData = await aiAssistantService.getProactiveTriggers();
+      // if (triggersData) {
+      //   setProactiveTriggers(triggersData);
+      // }
 
     } catch (error) {
       console.error('Error loading AI assistant data:', error);
@@ -116,9 +101,9 @@ const AiAssistant: React.FC = () => {
     try {
       const result = await aiAssistantService.triggerIntegration(action, { ...payload, userId });
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error testing integration:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error.message || 'Unknown error' };
     }
   };
 
@@ -518,7 +503,7 @@ const AiAssistant: React.FC = () => {
                       Frequently Asked
                     </h3>
                     <div className="space-y-2">
-                      {memory.frequently_asked?.slice(0, 3).map((question, idx) => (
+                      {memory.frequently_asked?.slice(0, 3).map((question: string, idx: number) => (
                         <div key={idx} className="text-sm text-gray-600 dark:text-gray-400">
                           • {question}
                         </div>

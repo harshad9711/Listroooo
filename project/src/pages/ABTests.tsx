@@ -1,7 +1,9 @@
-import React from "react";
+import { useState, useEffect } from 'react';
+import { Card } from '@tremor/react';
 
 
 import toast from 'react-hot-toast';
+import { Play, BarChart2, Pause, Calendar, Plus, Split, ArrowRight } from 'lucide-react';
 
 interface ABTest {
   id: string;
@@ -15,35 +17,16 @@ interface ABTest {
   created_at: string;
 }
 
-const mockTests: ABTest[] = [
-  {
-    id: '1',
-    name: 'Product Title Test',
-    listing_id: '1',
-    control_variant_id: 'c1',
-    test_variant_id: 't1',
-    start_date: '2025-06-01T00:00:00Z',
-    end_date: '2025-06-15T00:00:00Z',
-    status: 'active',
-    created_at: '2025-05-28T10:00:00Z'
-  },
-  {
-    id: '2',
-    name: 'Description Length Test',
-    listing_id: '2',
-    control_variant_id: 'c2',
-    test_variant_id: 't2',
-    start_date: '2025-06-05T00:00:00Z',
-    end_date: '2025-06-19T00:00:00Z',
-    status: 'draft',
-    created_at: '2025-05-28T11:30:00Z'
-  }
-];
-
 export default function ABTests() {
-  const [tests, setTests] = useState<ABTest[]>(mockTests);
+  const [tests, setTests] = useState<ABTest[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('all');
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/ab-tests`)
+      .then(res => res.json())
+      .then(data => setTests(data));
+  }, []);
 
   const filteredTests = tests.filter(test => 
     selectedStatus === 'all' || test.status === selectedStatus

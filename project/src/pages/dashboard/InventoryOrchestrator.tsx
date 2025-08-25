@@ -1,7 +1,7 @@
-import React from "react";
-
-
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { Package, TrendingUp, Filter, Download, RefreshCw, AlertCircle, Calendar } from 'lucide-react';
+import { Card, Text } from '@tremor/react';
 
 interface InventoryItem {
   sku: string;
@@ -97,7 +97,7 @@ export default function InventoryOrchestrator() {
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <Title>Smart Inventory Orchestrator</Title>
+            <Text>Smart Inventory Orchestrator</Text>
             <Text className="text-gray-500 dark:text-gray-400">
               Optimize inventory levels across all channels
             </Text>

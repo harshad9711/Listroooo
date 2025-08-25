@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 import {
-  MessageSquare, 
   Send, 
   Bot, 
   User, 
@@ -9,19 +8,18 @@ import {
   Zap, 
   BarChart2, 
   FileText, 
-  Calendar,
   TrendingUp,
   DollarSign,
-  Users,
-  Play,
   Slack,
-  MessageCircle,
-  Brain,
-  Search,
   BookOpen,
-  Lightbulb
+  Brain
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+// Temporary Card components - replace with actual UI library imports
+const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+  <div className={`bg-white rounded-lg border shadow-sm ${className}`}>{children}</div>
+);
 
 interface Message {
   id: string;
@@ -81,15 +79,14 @@ export default function Chatbot() {
   const [messages, setMessages] = useState<Message[]>(mockMessages);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
@@ -185,11 +182,10 @@ export default function Chatbot() {
         </div>
         <div className="flex space-x-3">
           <button
-            onClick={() => setShowSettings(true)}
-            className="btn-secondary"
+            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            // onClick={() => setShowSettings(true)}
           >
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
+            <Settings className="h-5 w-5" />
           </button>
           <button className="btn-secondary">
             <Slack className="h-4 w-4 mr-2" />

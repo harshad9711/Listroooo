@@ -1,7 +1,13 @@
-import React from "react";
-
-
+import React, { useState } from "react";
+import { Card, Title, Text } from '@tremor/react';
+import { 
+  AlertCircle, 
+  RefreshCw, 
+  Sparkles, 
+  Copy 
+} from 'lucide-react';
 import toast from 'react-hot-toast';
+import { generateVeo3Prompt } from '../../services/veo3Prompt';
 
 interface Veo3PromptFormProps {
   onPromptGenerated?: (prompt: string) => void;

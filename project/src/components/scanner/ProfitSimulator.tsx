@@ -1,6 +1,12 @@
-import React from "react";
-
-
+import { useState, useEffect } from "react";
+import { Card, Title, Text } from '@tremor/react';
+import { 
+  AlertCircle, 
+  DollarSign, 
+  ShoppingCart, 
+  TrendingUp,
+  Percent
+} from 'lucide-react';
 
 interface PlatformFees {
   shopify: number;

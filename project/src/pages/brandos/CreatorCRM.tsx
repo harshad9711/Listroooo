@@ -1,4 +1,4 @@
-import React from "react";
+import { Filter, Plus, Users } from 'lucide-react';
 
 
 export default function CreatorCRM() {

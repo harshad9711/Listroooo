@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 import {
-  Search, 
   TrendingUp, 
   Users, 
   MessageSquare, 
@@ -9,26 +8,21 @@ import {
   BarChart2, 
   Filter, 
   Download, 
-  RefreshCw,
   Eye,
   Heart,
   ThumbsUp,
   ThumbsDown,
   Star,
   MapPin,
-  Calendar,
-  Target,
-  Zap,
   Mail,
   Phone,
-  ArrowRight,
   Plus
 } from 'lucide-react';
 import SentimentAnalysis from '../components/insights/SentimentAnalysis';
 import CompetitorMonitoring from '../components/insights/CompetitorMonitoring';
 import CustomerJourneyMapping from '../components/insights/CustomerJourneyMapping';
 import ChurnPrevention from '../components/insights/ChurnPrevention';
-import MarketPulseDashboard from '../components/insights/MarketPulseDashboard';
+// import MarketPulseDashboard from '../components/insights/MarketPulseDashboard'; // This import is commented out as it's not a module
 
 interface InsightMetric {
   label: string;
@@ -163,10 +157,10 @@ export default function CustomerInsights() {
 
           {/* Recent Insights */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-white dark:bg-gray-800">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <Title>Recent Sentiment Trends</Title>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Sentiment Trends</h3>
                   <button className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 text-sm font-medium">
                     View All
                   </button>
@@ -198,12 +192,12 @@ export default function CustomerInsights() {
                   </div>
                 </div>
               </div>
-            </Card>
+            </div>
 
-            <Card className="bg-white dark:bg-gray-800">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <Title>Competitor Activity</Title>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Competitor Activity</h3>
                   <button className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 text-sm font-medium">
                     View All
                   </button>
@@ -241,18 +235,18 @@ export default function CustomerInsights() {
                   </div>
                 </div>
               </div>
-            </Card>
+            </div>
           </div>
 
           {/* High-Risk Customers */}
-          <Card className="bg-white dark:bg-gray-800">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <Title>High-Risk Customers</Title>
-                  <Text className="text-gray-500 dark:text-gray-400">
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">High-Risk Customers</h3>
+                  <p className="text-gray-500 dark:text-gray-400">
                     Customers with high churn probability requiring immediate attention
-                  </Text>
+                  </p>
                 </div>
                 <button className="btn-primary">
                   <Plus className="h-4 w-4 mr-2" />
@@ -354,7 +348,7 @@ export default function CustomerInsights() {
                 </table>
               </div>
             </div>
-          </Card>
+          </div>
         </div>
       )}
 
@@ -362,8 +356,14 @@ export default function CustomerInsights() {
       {activeTab === 'competitors' && <CompetitorMonitoring />}
       {activeTab === 'journey' && <CustomerJourneyMapping />}
       {activeTab === 'churn' && <ChurnPrevention />}
-      {activeTab === 'pulse' && <MarketPulseDashboard />}
+      {activeTab === 'pulse' && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Market Pulse Dashboard</h3>
+          <p className="text-gray-500 dark:text-gray-400">
+            This section is currently under development.
+          </p>
+        </div>
+      )}
     </div>
   );
-}
 }

@@ -1,20 +1,16 @@
-import React from "react";
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 
 import {
-  Calculator, 
-  Split, 
   TrendingUp, 
-  Package, 
-  Brain, 
-  LineChart, 
-  Users, 
   BarChart2, 
-  Calendar,
-  ArrowRight,
-  Search,
-  Filter,
-  Plus
+  Users,
+  Package,
+  Brain,
+  LineChart,
+  Calculator,
+  ArrowRight
 } from 'lucide-react';
 import ProfitSimulator from '../components/scanner/ProfitSimulator';
 import AdSpyDashboard from '../components/scanner/AdSpyDashboard';

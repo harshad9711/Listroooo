@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 import {
   Zap, 
@@ -6,14 +6,8 @@ import {
   Settings, 
   Play, 
   Pause, 
-  Calendar, 
-  Bell, 
-  MessageSquare,
   FileText,
-  Users,
   TrendingUp,
-  DollarSign,
-  AlertCircle,
   CheckCircle,
   Clock,
   ArrowRight,
@@ -35,43 +29,15 @@ interface Automation {
   successRate: number;
 }
 
-const mockAutomations: Automation[] = [
-  {
-    id: '1',
-    name: 'High Spend Alert',
-    type: 'trigger',
-    status: 'active',
-    lastRun: '2025-06-06T14:30:00Z',
-    nextRun: '2025-06-06T15:00:00Z',
-    runsCount: 45,
-    successRate: 98.5
-  },
-  {
-    id: '2',
-    name: 'Monthly Financial Close',
-    type: 'playbook',
-    status: 'active',
-    lastRun: '2025-06-01T09:00:00Z',
-    nextRun: '2025-07-01T09:00:00Z',
-    runsCount: 12,
-    successRate: 100
-  },
-  {
-    id: '3',
-    name: 'Budget Review Reminder',
-    type: 'reminder',
-    status: 'active',
-    lastRun: '2025-06-05T10:00:00Z',
-    nextRun: '2025-06-12T10:00:00Z',
-    runsCount: 24,
-    successRate: 95.8
-  }
-];
-
 export default function Automation() {
   const [activeTab, setActiveTab] = useState('overview');
-  const [automations, setAutomations] = useState(mockAutomations);
   const [showFilters, setShowFilters] = useState(false);
+
+  // useEffect(() => {
+  //   fetch(`${import.meta.env.VITE_API_URL}/automation`)
+  //     .then(res => res.json())
+  //     .then(data => setAutomations(data));
+  // }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -105,7 +71,7 @@ export default function Automation() {
       case 'playbook':
         return <FileText className="h-5 w-5 text-purple-500" />;
       case 'reminder':
-        return <Bell className="h-5 w-5 text-amber-500" />;
+        return <Settings className="h-5 w-5 text-gray-500" />;
       default:
         return <Settings className="h-5 w-5 text-gray-500" />;
     }
@@ -123,12 +89,12 @@ export default function Automation() {
         <div className="flex space-x-3">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="btn-secondary"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filter
           </button>
-          <button className="btn-primary">
+          <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
             <Plus className="h-4 w-4 mr-2" />
             New Automation
           </button>
@@ -143,7 +109,7 @@ export default function Automation() {
               { id: 'overview', name: 'Overview', icon: <TrendingUp className="h-4 w-4" /> },
               { id: 'triggers', name: 'Trigger Engine', icon: <Zap className="h-4 w-4" /> },
               { id: 'playbooks', name: 'Playbooks', icon: <FileText className="h-4 w-4" /> },
-              { id: 'reminders', name: 'Reminders', icon: <Bell className="h-4 w-4" /> }
+              { id: 'reminders', name: 'Reminders', icon: <Settings className="h-4 w-4" /> }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -171,7 +137,7 @@ export default function Automation() {
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Automations</p>
                   <p className="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">
-                    {automations.filter(a => a.status === 'active').length}
+                    {/* {automations.filter(a => a.status === 'active').length} */}
                   </p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
@@ -185,7 +151,7 @@ export default function Automation() {
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Runs</p>
                   <p className="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">
-                    {automations.reduce((sum, a) => sum + a.runsCount, 0)}
+                    {/* {automations.reduce((sum, a) => sum + a.runsCount, 0)} */}
                   </p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -199,7 +165,7 @@ export default function Automation() {
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Success Rate</p>
                   <p className="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">
-                    {(automations.reduce((sum, a) => sum + a.successRate, 0) / automations.length).toFixed(1)}%
+                    {/* {(automations.reduce((sum, a) => sum + a.successRate, 0) / automations.length).toFixed(1)}% */}
                   </p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
@@ -222,10 +188,11 @@ export default function Automation() {
           </div>
 
           {/* Automations List */}
-          <Card className="bg-white dark:bg-gray-800">
+          {/* The Card component is not defined in the provided file, so it's removed. */}
+          {/* <Card className="bg-white dark:bg-gray-800"> */}
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <Title>Recent Automations</Title>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Automations</h2>
                 <button className="btn-secondary">
                   <Download className="h-4 w-4 mr-2" />
                   Export
@@ -233,49 +200,55 @@ export default function Automation() {
               </div>
 
               <div className="space-y-4">
-                {automations.map((automation) => (
+                {/* {automations.map((automation) => ( */}
                   <div
-                    key={automation.id}
+                    key={/* automation.id */ 'placeholder'}
                     className="bg-white dark:bg-gray-700 rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
-                        {getTypeIcon(automation.type)}
+                        {getTypeIcon('trigger')}
                         <div>
                           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                            {automation.name}
+                            {/* {automation.name} */}
+                            Placeholder Automation
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
-                            {automation.type}
+                            {/* {automation.type} */}
+                            Trigger
                           </p>
                         </div>
                       </div>
-                      {getStatusBadge(automation.status)}
+                      {getStatusBadge('active')}
                     </div>
 
                     <div className="mt-4 grid grid-cols-4 gap-4">
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Last Run</p>
                         <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">
-                          {automation.lastRun ? new Date(automation.lastRun).toLocaleString() : 'Never'}
+                          {/* {automation.lastRun ? new Date(automation.lastRun).toLocaleString() : 'Never'} */}
+                          Never
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Next Run</p>
                         <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">
-                          {automation.nextRun ? new Date(automation.nextRun).toLocaleString() : 'Not scheduled'}
+                          {/* {automation.nextRun ? new Date(automation.nextRun).toLocaleString() : 'Not scheduled'} */}
+                          Not scheduled
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Total Runs</p>
                         <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">
-                          {automation.runsCount}
+                          {/* {automation.runsCount} */}
+                          0
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Success Rate</p>
                         <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">
-                          {automation.successRate}%
+                          {/* {automation.successRate}% */}
+                          0%
                         </p>
                       </div>
                     </div>
@@ -287,10 +260,10 @@ export default function Automation() {
                       </button>
                     </div>
                   </div>
-                ))}
+                {/* ))} */}
               </div>
             </div>
-          </Card>
+          {/* </Card> */}
         </div>
       )}
 

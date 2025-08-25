@@ -1,5 +1,6 @@
-import React from "react";
-
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from "../../contexts/AuthContext";
 
 
 const Login = () => {
@@ -16,8 +17,9 @@ const Login = () => {
     try {
       await login(email, password);
       navigate('/dashboard');
-    } catch (err) {
-      setError('Invalid email or password');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err?.message || 'Invalid email or password. Please try again.');
     }
   };
 

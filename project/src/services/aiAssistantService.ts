@@ -7,10 +7,8 @@ export class AiAssistantService {
   // Context-aware: Accepts user, page, and context
   async getContextualSuggestion(context: any) {
     try {
-      const { userId, preferences, memory, recentActions } = context;
-      
       // Get user's recent activity and current state
-      const recentActivity = recentActions.slice(-5);
+      const recentActivity = context.recentActions.slice(-5);
       const lastAction = recentActivity[recentActivity.length - 1];
       
       // Generate contextual suggestions based on recent activity
@@ -33,10 +31,8 @@ export class AiAssistantService {
   }
 
   // Retrieval-Augmented Generation (RAG) - Real implementation
-  async retrieveAndGenerate(query: string, context: any) {
+  async retrieveAndGenerate(query: string) {
     try {
-      const { userId, preferences, memory, recentActions } = context;
-      
       // Retrieve relevant data from Supabase based on query
       let retrievedData: any = {};
       
@@ -50,7 +46,7 @@ export class AiAssistantService {
       // Check if query is about campaigns/ads
       if (query.toLowerCase().includes('campaign') || query.toLowerCase().includes('ad') || query.toLowerCase().includes('performance')) {
         const adPerformance = await adCreativePerformanceService.getAdPerformance();
-        const topCreatives = await adCreativePerformanceService.getTopCreatives();
+        const topCreatives = await adCreativePerformanceService.getAdCreatives();
         retrievedData.campaigns = { adPerformance, topCreatives };
       }
       
@@ -69,7 +65,7 @@ export class AiAssistantService {
           answer = `Based on your inventory data: You have ${lowStockProducts.length} products with low stock. Total inventory value: $${inventoryMetrics.totalValue?.toFixed(2) || 'N/A'}. Would you like me to help you reorder or analyze inventory trends?`;
         } else if (retrievedData.campaigns) {
           const { adPerformance, topCreatives } = retrievedData.campaigns;
-          answer = `Your ad performance: ${adPerformance.totalSpent ? `Total spent: $${adPerformance.totalSpent}` : 'No data available'}. Top performing creatives: ${topCreatives.length} items. Would you like me to help optimize underperforming ads?`;
+          answer = `Your ad performance: ${adPerformance.total_spend ? `Total spent: $${adPerformance.total_spend}` : 'No data available'}. Top performing creatives: ${topCreatives.length} items. Would you like me to help optimize underperforming ads?`;
         } else if (retrievedData.marketing) {
           const { emailTemplates, smsTemplates } = retrievedData.marketing;
           answer = `You have ${emailTemplates.length} email templates and ${smsTemplates.length} SMS templates available. Would you like me to help create new campaigns or optimize existing ones?`;
@@ -88,7 +84,7 @@ export class AiAssistantService {
       return { 
         answer: 'I encountered an error while retrieving data. Please try again or ask a more specific question.',
         sources: [],
-        error: error.message 
+        error: (error as Error).message 
       };
     }
   }
@@ -96,30 +92,29 @@ export class AiAssistantService {
   // Proactive, Triggered Recommendations - Real implementation
   async getProactiveRecommendations(context: any) {
     try {
-      const { userId, preferences, memory, recentActions } = context;
       const recommendations = [];
       
       // Check inventory triggers
       try {
         const lowStockProducts = await inventoryService.getLowStockProducts();
-        if (lowStockProducts.length > 0) {
+        if (lowStockProducts.success && lowStockProducts.products && lowStockProducts.products.length > 0) {
           recommendations.push({
             type: 'inventory',
             priority: 'high',
-            message: `You have ${lowStockProducts.length} products with low stock. Would you like me to help you reorder them?`,
+            message: `You have ${lowStockProducts.products.length} products with low stock. Would you like me to help you reorder them?`,
             action: 'reorder_inventory',
-            data: { products: lowStockProducts }
+            data: { products: lowStockProducts.products }
           });
         }
         
         const blockedOrders = await inventoryService.getBlockedOrders();
-        if (blockedOrders.length > 0) {
+        if (blockedOrders.success && blockedOrders.orders && blockedOrders.orders.length > 0) {
           recommendations.push({
             type: 'inventory',
             priority: 'high',
-            message: `You have ${blockedOrders.length} blocked orders due to insufficient stock. Would you like me to help resolve these?`,
+            message: `You have ${blockedOrders.orders.length} blocked orders due to insufficient stock. Would you like me to help resolve these?`,
             action: 'resolve_blocked_orders',
-            data: { orders: blockedOrders }
+            data: { orders: blockedOrders.orders }
           });
         }
       } catch (error) {
@@ -129,8 +124,8 @@ export class AiAssistantService {
       // Check campaign performance triggers
       try {
         const adPerformance = await adCreativePerformanceService.getAdPerformance();
-        if (adPerformance && adPerformance.totalSpent > 0) {
-          const avgROAS = adPerformance.totalRevenue / adPerformance.totalSpent;
+        if (adPerformance && adPerformance.total_spend > 0) {
+          const avgROAS = (adPerformance.total_spend || 0) / adPerformance.total_spend;
           if (avgROAS < 2.0) {
             recommendations.push({
               type: 'campaign',
@@ -146,7 +141,7 @@ export class AiAssistantService {
       }
       
       // Check for new features or opportunities
-      if (recentActions.length === 0 || Date.now() - recentActions[recentActions.length - 1].timestamp > 24 * 60 * 60 * 1000) {
+      if (context.recentActions.length === 0 || Date.now() - context.recentActions[context.recentActions.length - 1].timestamp > 24 * 60 * 60 * 1000) {
         recommendations.push({
           type: 'engagement',
           priority: 'low',
@@ -208,7 +203,7 @@ export class AiAssistantService {
       return { success: true, data };
     } catch (error) {
       console.error('Error saving user memory:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -229,14 +224,14 @@ export class AiAssistantService {
         }
       } else if (input.text) {
         // Process text input with RAG
-        const ragResponse = await this.retrieveAndGenerate(input.text, {});
+        const ragResponse = await this.retrieveAndGenerate(input.text);
         response = ragResponse.answer;
       }
       
       return { response, input };
     } catch (error) {
       console.error('Error handling multimodal input:', error);
-      return { response: 'I encountered an error processing your input. Please try again.', input, error: error.message };
+      return { response: 'I encountered an error processing your input. Please try again.', input, error: (error as Error).message };
     }
   }
 
@@ -250,7 +245,7 @@ export class AiAssistantService {
           result = await this.handleInventoryReorder(payload);
           break;
         case 'optimize_campaigns':
-          result = await this.handleCampaignOptimization(payload);
+          result = await this.handleCampaignOptimization();
           break;
         case 'create_email_campaign':
           result = await this.handleEmailCampaign(payload);
@@ -268,7 +263,7 @@ export class AiAssistantService {
       return result;
     } catch (error) {
       console.error('Error triggering integration:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -283,13 +278,12 @@ export class AiAssistantService {
         data: { reorderId: 'REORDER_' + Date.now() }
       };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
-  private async handleCampaignOptimization(payload: any) {
+  private async handleCampaignOptimization() {
     try {
-      const { performance } = payload;
       // Simulate campaign optimization
       await new Promise(resolve => setTimeout(resolve, 1500));
       return {
@@ -298,7 +292,7 @@ export class AiAssistantService {
         data: { optimizedCampaigns: 3, estimatedImprovement: '15%' }
       };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -313,7 +307,7 @@ export class AiAssistantService {
         data: { campaignId: 'EMAIL_' + Date.now(), templateCount: templates.length }
       };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -328,7 +322,7 @@ export class AiAssistantService {
         data: { syncedItems: 150, lastSync: new Date().toISOString() }
       };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -343,7 +337,7 @@ export class AiAssistantService {
         data: { contentId: 'CONTENT_' + Date.now(), type, prompt }
       };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -384,7 +378,7 @@ export class AiAssistantService {
       return { success: true, data };
     } catch (error) {
       console.error('Error updating model settings:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -404,7 +398,7 @@ export class AiAssistantService {
       return { success: true };
     } catch (error) {
       console.error('Error logging AI action:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: (error as Error).message };
     }
   }
 }

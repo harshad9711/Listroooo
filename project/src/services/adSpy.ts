@@ -51,40 +51,48 @@ async function retryWithBackoff<T>(
   }
 }
 
-export async function fetchWinningAds(platform: string, category: string): Promise<AdData[]> {
-  // In production, this would call actual ad library APIs
-  const mockAds: AdData[] = [
-    {
-      id: '1',
-      title: 'Experience Wireless Freedom',
-      body: 'Introducing our new wireless earbuds with active noise cancellation. Get yours today!',
-      imageUrl: 'https://images.pexels.com/photos/3945667/pexels-photo-3945667.jpeg',
-      platform: 'Meta',
-      performance: {
-        impressions: 50000,
-        clicks: 2500,
-        ctr: 5.0,
-        spend: 1000
+export async function fetchWinningAds(platform: string): Promise<AdData[]> {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/ads/winning?platform=${platform}`);
+    if (!response.ok) throw new Error('Failed to fetch winning ads');
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching winning ads:', error);
+    // Fallback to mock data if API fails
+    const mockAds: AdData[] = [
+      {
+        id: '1',
+        title: 'Experience Wireless Freedom',
+        body: 'Introducing our new wireless earbuds with active noise cancellation. Get yours today!',
+        imageUrl: 'https://images.pexels.com/photos/3945667/pexels-photo-3945667.jpeg',
+        platform: 'Meta',
+        performance: {
+          impressions: 50000,
+          clicks: 2500,
+          ctr: 5.0,
+          spend: 1000
+        }
+      },
+      {
+        id: '2',
+        title: 'Your Music, Your Way',
+        body: 'Premium sound quality meets comfort. Limited time offer - 20% off!',
+        imageUrl: 'https://images.pexels.com/photos/3394650/pexels-photo-3394650.jpeg',
+        platform: 'TikTok',
+        performance: {
+          impressions: 75000,
+          clicks: 4500,
+          ctr: 6.0,
+          spend: 1500
+        }
       }
-    },
-    {
-      id: '2',
-      title: 'Your Music, Your Way',
-      body: 'Premium sound quality meets comfort. Limited time offer - 20% off!',
-      imageUrl: 'https://images.pexels.com/photos/3394650/pexels-photo-3394650.jpeg',
-      platform: 'TikTok',
-      performance: {
-        impressions: 75000,
-        clicks: 4500,
-        ctr: 6.0,
-        spend: 1500
-      }
-    }
-  ];
+    ];
 
-  return mockAds.filter(ad => 
-    platform === 'all' || ad.platform.toLowerCase() === platform.toLowerCase()
-  );
+    return mockAds.filter(ad => 
+      platform === 'all' || ad.platform.toLowerCase() === platform.toLowerCase()
+    );
+  }
 }
 
 export async function recreateAd(ad: AdData, brandTone: string): Promise<RecreatedAd> {

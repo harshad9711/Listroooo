@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from 'react-router-dom';
 import { Sparkles, Split, Layers, Store, ArrowUpRight, ShoppingBag } from 'lucide-react';
 

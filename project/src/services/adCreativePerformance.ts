@@ -1,9 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '../lib/supabase';
 
 export interface AdCreative {
   id: number;
@@ -288,6 +283,14 @@ class AdCreativePerformanceService {
       return false;
     }
   }
+
+  /**
+   * Get ad performance (alias for getPerformanceMetrics)
+   */
+  async getAdPerformance() {
+    return this.getPerformanceMetrics();
+  }
 }
 
-export const adCreativePerformanceService = new AdCreativePerformanceService(); 
+export const adCreativePerformanceService = new AdCreativePerformanceService();
+export default adCreativePerformanceService; 

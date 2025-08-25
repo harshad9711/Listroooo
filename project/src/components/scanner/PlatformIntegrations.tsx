@@ -1,5 +1,6 @@
-import React from "react";
-
+import React, { useState, useEffect } from "react";
+import { inventoryService, SUPPORTED_PLATFORMS } from '../../services/inventoryService';
+import type { PlatformIntegration } from '../../services/inventoryService';
 
 import {
   Store, 
@@ -13,7 +14,6 @@ import {
   RefreshCw,
   Plus,
   Edit,
-  Trash2,
   Eye,
   Zap,
   Shield,
@@ -23,7 +23,6 @@ import {
   Truck,
   CreditCard,
   BarChart3,
-  Filter,
   Search
 } from 'lucide-react';
 
@@ -305,7 +304,11 @@ const PlatformIntegrations: React.FC = () => {
     try {
       setLoading(true);
       const data = await inventoryService.getPlatformIntegrations();
-      setIntegrations(data);
+      if (data.success && data.integrations) {
+        setIntegrations(data.integrations);
+      } else {
+        setIntegrations([]);
+      }
     } catch (error) {
       console.error('Error loading integrations:', error);
     } finally {
@@ -333,8 +336,8 @@ const PlatformIntegrations: React.FC = () => {
     try {
       await inventoryService.updatePlatformIntegration(platform, {
         is_connected: false,
-        store_url: null,
-        last_sync: null
+        store_url: undefined,
+        last_sync: undefined
       });
       await loadIntegrations();
     } catch (error) {
@@ -350,7 +353,9 @@ const PlatformIntegrations: React.FC = () => {
   const handleBulkSync = async () => {
     try {
       const result = await inventoryService.bulkSyncInventory();
-      console.log(`Bulk sync completed: ${result.success} successful, ${result.failed} failed`);
+      const successful = result.results?.filter(r => r.success).length || 0;
+      const failed = result.results?.filter(r => !r.success).length || 0;
+      console.log(`Bulk sync completed: ${successful} successful, ${failed} failed`);
       await loadIntegrations();
     } catch (error) {
       console.error('Error during bulk sync:', error);
@@ -362,7 +367,7 @@ const PlatformIntegrations: React.FC = () => {
     .filter(([key, platform]) => {
       const matchesSearch = platform.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            platform.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           platform.features.some(f => f.toLowerCase().includes(searchTerm.toLowerCase()));
+                           platform.features.some((f: string) => f.toLowerCase().includes(searchTerm.toLowerCase()));
       
       const matchesCategory = selectedCategory === 'all' || platform.category === selectedCategory;
       
@@ -377,11 +382,15 @@ const PlatformIntegrations: React.FC = () => {
     })
     .map(([key, platform]) => ({
       key,
-      ...platform,
+      name: platform.name,
+      category: platform.category,
+      features: platform.features,
+      api_docs: `https://docs.${key}.com/api`,
+      icon: key,
       integration: integrations.find(i => i.platform === key)
     }));
 
-  const categories = [...new Set(Object.values(SUPPORTED_PLATFORMS).map(p => p.category))];
+  const categories = [...new Set(Object.values(SUPPORTED_PLATFORMS).map((p: any) => p.category))];
 
   if (loading) {
     return (

@@ -17,7 +17,7 @@ const cohere = new CohereClient({
 export interface Veo3GenerationJob {
   id: string;
   user_id: string;
-  type: 'video' | 'image' | 'ad' | 'batch';
+  type: 'video' | 'image' | 'ad';
   prompts: string[];
   options: {
     style?: string;
@@ -161,7 +161,7 @@ export class Veo3ProductionService {
 
     } catch (error) {
       console.error('Error processing job:', error);
-      await this.updateJobStatus(jobId, 'failed', undefined, error.message);
+      await this.updateJobStatus(jobId, 'failed', undefined, (error as Error).message);
     } finally {
       this.processingJobs.delete(jobId);
       
@@ -221,7 +221,7 @@ export class Veo3ProductionService {
       ],
     });
 
-    return response.content[0].text;
+    return (response.content[0] as any).text;
   }
 
   // Generate variants with Cohere
@@ -272,7 +272,7 @@ Return your response in a structured format that can be used for content generat
   }
 
   // Build variant prompt for Cohere
-  private buildVariantPrompt(primaryContent: string, type: Veo3GenerationJob['type'], options: Veo3GenerationJob['options']): string {
+  private buildVariantPrompt(primaryContent: string, type: Veo3GenerationJob['type'], _options: Veo3GenerationJob['options']): string {
     return `Based on this ${type} content, generate 3 alternative versions that maintain the same quality but offer different approaches:
 
 Original: ${primaryContent}
@@ -406,7 +406,7 @@ ${variant}`).join('\n\n')}`;
   private async updateJobStatus(
     jobId: string,
     status: Veo3GenerationJob['status'],
-    results?: Veo3Result[],
+    _results?: Veo3Result[],
     error?: string
   ): Promise<void> {
     try {
@@ -491,7 +491,7 @@ ${variant}`).join('\n\n')}`;
         .select('*', { count: 'exact', head: true })
         .eq('status', 'completed');
 
-      const successRate = totalJobs ? (completedJobs / totalJobs) * 100 : 0;
+      const successRate = totalJobs ? ((completedJobs || 0) / totalJobs) * 100 : 0;
 
       // Get average processing time
       const { data: completedJobTimes } = await supabase

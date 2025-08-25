@@ -1,7 +1,20 @@
-import React from "react";
-
-
+import { useState, useEffect } from "react";
+import { Card, Title, Text } from '@tremor/react';
+import { 
+  Filter, 
+  Download, 
+  RefreshCw, 
+  AlertCircle, 
+  Users, 
+  TrendingUp, 
+  BarChart2,
+  DollarSign,
+  ImageIcon,
+  Copy,
+  Search
+} from 'lucide-react';
 import toast from 'react-hot-toast';
+import { fetchWinningAds, generateCreatives, exportResults } from '../../services/adSpy';
 
 interface AdSpyDashboardProps {
   platform?: string;
@@ -24,7 +37,7 @@ export default function AdSpyDashboard({ platform = 'all', category = 'all' }: A
     setLoading(true);
     setError(null);
     try {
-      const fetchedAds = await fetchWinningAds(platform, category);
+      const fetchedAds = await fetchWinningAds(platform);
       setAds(fetchedAds);
       
       try {
@@ -33,7 +46,7 @@ export default function AdSpyDashboard({ platform = 'all', category = 'all' }: A
           setRecreatedAds(recreated);
           toast.success('Ads fetched and recreated successfully');
         } else {
-          toast.warning('Ads fetched but recreation was partially successful');
+          toast.error('Ads fetched but recreation was partially successful');
         }
       } catch (error: any) {
         console.error('Ad recreation error:', error);

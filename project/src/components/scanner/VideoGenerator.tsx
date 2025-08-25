@@ -1,7 +1,14 @@
-import React from "react";
-
-
+import { useState, useEffect } from "react";
+import { Card, Title, Text } from '@tremor/react';
+import { 
+  Download, 
+  AlertCircle, 
+  RefreshCw, 
+  Sparkles,
+  Check
+} from 'lucide-react';
 import toast from 'react-hot-toast';
+import { generateVideo, getVideoStatus, uploadToS3, type VideoMetadata } from '../../services/veo3';
 
 interface VideoGeneratorProps {
   onComplete?: (videoUrl: string) => void;

@@ -1,25 +1,22 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 
 import {
   Sparkles, 
   Copy, 
-  Check, 
   AlertCircle, 
   RefreshCw, 
   Plus, 
   Trash2, 
-  Download, 
-  Star,
   History,
   Settings,
-  Play,
-  Pause,
   CheckCircle,
   XCircle,
   Clock
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { veo3Production, type Veo3GenerationJob } from '../../services/veo3Production';
+import { Button, Select, SelectItem, TextInput, Card, Title, Badge, Text } from '@tremor/react';
 
 interface Veo3ProductionFormProps {
   userId: string;
@@ -130,7 +127,7 @@ export default function Veo3ProductionForm({ userId, onJobCreated }: Veo3Product
       // Create batch job
       const job = await veo3Production.createJob(
         userId,
-        'batch',
+        'video',
         validPrompts.map(p => p.text),
         {
           style: validPrompts[0].style,

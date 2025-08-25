@@ -21,8 +21,7 @@ export default defineConfig({
     open: true,
   },
   optimizeDeps: {
-    exclude: ['lucide-react'],
-    include: ['cohere-ai', 'buffer'],
+    include: ['cohere-ai', 'buffer', 'lucide-react'],
   },
   build: {
     outDir: 'dist',

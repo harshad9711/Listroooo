@@ -41,18 +41,15 @@ export interface InstagramHashtag {
 export class InstagramService {
   private accessToken: string;
   private businessAccountId: string;
-  private pageId: string;
 
   constructor() {
     this.accessToken = process.env.REACT_APP_INSTAGRAM_ACCESS_TOKEN || '';
     this.businessAccountId = process.env.REACT_APP_INSTAGRAM_BUSINESS_ACCOUNT_ID || '';
-    this.pageId = process.env.REACT_APP_FACEBOOK_PAGE_ID || '';
   }
 
-  setCredentials(accessToken: string, businessAccountId: string, pageId: string) {
+  setCredentials(accessToken: string, businessAccountId: string) {
     this.accessToken = accessToken;
     this.businessAccountId = businessAccountId;
-    this.pageId = pageId;
   }
 
   async getBusinessAccountInfo(): Promise<InstagramBusinessAccount> {

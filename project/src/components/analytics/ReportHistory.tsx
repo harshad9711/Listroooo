@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Filter, 
   Clock, 
@@ -18,50 +18,6 @@ interface Report {
   downloadUrl: string;
 }
 
-// Expanded mock data
-const mockReports: Report[] = [
-  {
-    id: '1',
-    date: '2025-05-06 14:30',
-    type: 'Performance Analytics',
-    platform: 'All Platforms',
-    recipients: ['user@example.com'],
-    downloadUrl: '#'
-  },
-  {
-    id: '2',
-    date: '2025-05-05 09:15',
-    type: 'Conversion Report',
-    platform: 'Amazon',
-    recipients: ['team@example.com'],
-    downloadUrl: '#'
-  },
-  {
-    id: '3',
-    date: '2025-05-04 16:45',
-    type: 'Optimization Impact',
-    platform: 'Shopify',
-    recipients: ['analytics@example.com'],
-    downloadUrl: '#'
-  },
-  {
-    id: '4',
-    date: '2025-05-03 11:20',
-    type: 'Monthly Summary',
-    platform: 'All Platforms',
-    recipients: ['manager@example.com'],
-    downloadUrl: '#'
-  },
-  {
-    id: '5',
-    date: '2025-05-02 15:10',
-    type: 'Performance Analytics',
-    platform: 'TikTok Shop',
-    recipients: ['marketing@example.com'],
-    downloadUrl: '#'
-  }
-];
-
 const ITEMS_PER_PAGE = 3;
 
 const reportTypes = ['All Types', 'Performance Analytics', 'Conversion Report', 'Optimization Impact', 'Monthly Summary'];
@@ -72,8 +28,15 @@ export default function ReportHistory() {
   const [selectedType, setSelectedType] = useState('All Types');
   const [selectedPlatform, setSelectedPlatform] = useState('All Platforms');
   const [showFilters, setShowFilters] = useState(false);
+  const [reports, setReports] = useState<Report[]>([]);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/ugc/reports`)
+      .then(res => res.json())
+      .then(data => setReports(data));
+  }, []);
   
-  const filteredReports = mockReports.filter(report => {
+  const filteredReports = reports.filter(report => {
     const typeMatch = selectedType === 'All Types' || report.type === selectedType;
     const platformMatch = selectedPlatform === 'All Platforms' || report.platform === selectedPlatform;
     return typeMatch && platformMatch;

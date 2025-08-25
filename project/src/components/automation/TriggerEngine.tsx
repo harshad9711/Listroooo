@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Card, Title, Text } from '@tremor/react';
 import {
   Zap, 
   Plus, 
@@ -14,7 +13,6 @@ import {
   MessageSquare,
   Mail
 } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 interface Trigger {
   id: string;
@@ -101,18 +99,18 @@ export default function TriggerEngine() {
           ? { ...trigger, status: trigger.status === 'active' ? 'paused' : 'active' }
           : trigger
       ));
-      toast.success('Trigger status updated');
+      alert('Trigger status updated');
     } catch (error) {
-      toast.error('Failed to update trigger status');
+      alert('Failed to update trigger status');
     }
   };
 
   const handleDeleteTrigger = async (triggerId: string) => {
     try {
       setTriggers(prev => prev.filter(trigger => trigger.id !== triggerId));
-      toast.success('Trigger deleted');
+      alert('Trigger deleted');
     } catch (error) {
-      toast.error('Failed to delete trigger');
+      alert('Failed to delete trigger');
     }
   };
 
@@ -144,18 +142,18 @@ export default function TriggerEngine() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-white dark:bg-gray-800">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <Title>Trigger Engine</Title>
-              <Text className="text-gray-500 dark:text-gray-400">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Trigger Engine</h2>
+              <p className="text-gray-500 dark:text-gray-400">
                 Define conditions and automated actions for your campaigns
-              </Text>
+              </p>
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="btn-primary"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               <Plus className="h-4 w-4 mr-2" />
               Create Trigger
@@ -212,120 +210,57 @@ export default function TriggerEngine() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Condition */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Condition
-                    </h4>
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                      <div className="flex items-center space-x-2">
-                        {getMetricIcon(trigger.condition.metric)}
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {trigger.condition.metric.replace('_', ' ')}
-                        </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {trigger.condition.operator}
-                        </span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {trigger.condition.value}
-                        </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          ({trigger.condition.timeframe})
-                        </span>
-                      </div>
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Condition</h4>
+                    <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                      {getMetricIcon(trigger.condition.metric)}
+                      <span className="capitalize">{trigger.condition.metric.replace('_', ' ')}</span>
+                      <span>{trigger.condition.operator}</span>
+                      <span>${trigger.condition.value}</span>
+                      <span className="text-xs">({trigger.condition.timeframe})</span>
                     </div>
                   </div>
-
-                  {/* Actions */}
                   <div>
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Actions ({trigger.actions.length})
-                    </h4>
-                    <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Actions</h4>
+                    <div className="space-y-1">
                       {trigger.actions.map((action, index) => (
-                        <div
-                          key={index}
-                          className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
-                        >
-                          <div className="flex items-center space-x-2">
-                            {getActionIcon(action.type)}
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              {action.type.replace('_', ' ')}
-                            </span>
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                              → {action.target}
-                            </span>
-                          </div>
-                          {action.message && (
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">
-                              {action.message}
-                            </p>
-                          )}
+                        <div key={index} className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                          {getActionIcon(action.type)}
+                          <span className="capitalize">{action.type.replace('_', ' ')}</span>
+                          <span>→</span>
+                          <span>{action.target}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center space-x-4">
-                      <span className="text-gray-500 dark:text-gray-400">
-                        Triggered: {trigger.triggerCount} times
-                      </span>
-                      {trigger.lastTriggered && (
-                        <span className="text-gray-500 dark:text-gray-400">
-                          Last: {new Date(trigger.lastTriggered).toLocaleString()}
-                        </span>
-                      )}
-                    </div>
+                <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center space-x-4">
+                    <span>Triggered {trigger.triggerCount} times</span>
+                    {trigger.lastTriggered && (
+                      <span>Last: {new Date(trigger.lastTriggered).toLocaleDateString()}</span>
+                    )}
                   </div>
                 </div>
               </div>
             ))}
-
-            {triggers.length === 0 && (
-              <div className="text-center py-12">
-                <Zap className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No triggers configured</h3>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Get started by creating your first automation trigger
-                </p>
-                <div className="mt-6">
-                  <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="btn-primary"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Trigger
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
-      </Card>
+      </div>
 
-      {/* Create/Edit Modal would go here */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl mx-4">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              Create New Trigger
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Define conditions and actions for automated responses
-            </p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Create New Trigger</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-4">Trigger creation coming soon...</p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="btn-secondary"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
               >
                 Cancel
-              </button>
-              <button className="btn-primary">
-                Create Trigger
               </button>
             </div>
           </div>

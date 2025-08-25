@@ -89,7 +89,7 @@ const AiAssistant: React.FC = () => {
       if (file) {
         response = await aiAssistantService.handleMultimodalInput({ text: input, file });
       } else {
-        response = await aiAssistantService.retrieveAndGenerate(input, { userId, preferences, memory, recentActions });
+        response = await aiAssistantService.retrieveAndGenerate(input);
       }
       
       addMessage('assistant', response.answer || response.response, 'text', response);

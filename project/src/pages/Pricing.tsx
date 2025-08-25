@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import { Zap, Shield, Star, Users, Check, Plus, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-
-import toast from 'react-hot-toast';
 
 interface Plan {
   name: string;
@@ -148,6 +146,32 @@ export default function Pricing() {
             <p className="mt-6 text-lg leading-8 text-gray-600 dark:text-gray-400">
               Choose the perfect plan for your business. All plans include a 14-day free trial.
             </p>
+            {user && (
+              <div className="mt-8">
+                <Link
+                  to="/dashboard"
+                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Go to Dashboard
+                </Link>
+              </div>
+            )}
+            {!user && (
+              <div className="mt-8 space-x-4">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="inline-flex items-center px-6 py-3 border border-gray-300 dark:border-gray-600 text-base font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="mt-8 flex justify-center">

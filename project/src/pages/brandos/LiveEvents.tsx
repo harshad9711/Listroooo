@@ -1,6 +1,5 @@
-import React from "react";
-
-
+import { useState, useEffect } from 'react';
+import { Filter, Plus, Play, Pause, Clock, Calendar, Users, ArrowRight } from 'lucide-react';
 
 interface Event {
   id: string;
@@ -14,35 +13,16 @@ interface Event {
   engagement: number;
 }
 
-const mockEvents: Event[] = [
-  {
-    id: '1',
-    title: 'Summer Collection Launch',
-    description: 'Live showcase of our new summer collection with exclusive deals',
-    startDate: '2025-06-15T14:00:00Z',
-    endDate: '2025-06-15T16:00:00Z',
-    platform: 'TikTok Shop',
-    status: 'scheduled',
-    participants: 0,
-    engagement: 0
-  },
-  {
-    id: '2',
-    title: 'Q&A with Lead Designer',
-    description: 'Interactive Q&A session about our design process',
-    startDate: '2025-06-20T18:00:00Z',
-    endDate: '2025-06-20T19:30:00Z',
-    platform: 'Shopify',
-    status: 'scheduled',
-    participants: 0,
-    engagement: 0
-  }
-];
-
 export default function LiveEvents() {
-  const [events, setEvents] = useState<Event[]>(mockEvents);
+  const [events, setEvents] = useState<Event[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState('all');
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/brandos/live-events`)
+      .then(res => res.json())
+      .then(data => setEvents(data));
+  }, []);
 
   const filteredEvents = events.filter(event => 
     selectedPlatform === 'all' || event.platform === selectedPlatform

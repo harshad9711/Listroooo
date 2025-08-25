@@ -1,7 +1,6 @@
-import React from "react";
-
-
+import React, { useState } from 'react';
 import toast from 'react-hot-toast';
+import { Brain, Sparkles, Download, AlertCircle } from 'lucide-react';
 
 interface FormData {
   productName: string;

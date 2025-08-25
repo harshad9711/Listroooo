@@ -1,6 +1,3 @@
-import React from "react";
-
-
 import {
   ResponsiveContainer,
   LineChart,
@@ -14,12 +11,9 @@ import {
   Legend,
   PieChart,
   Pie,
-  Cell,
 } from "recharts";
 import {
-  BarChart2,
   Download,
-  Mail,
   TrendingUp,
   DollarSign,
   Users,
@@ -33,34 +27,13 @@ import ReportHistory from "../components/analytics/ReportHistory";
 import AbandonedRescueEngine from "../components/analytics/AbandonedRescueEngine";
 import AdCreativeRefresher from "../components/analytics/AdCreativeRefresher";
 import DeliveryPreferences from "../components/analytics/DeliveryPreferences";
+import { saveAs } from 'file-saver';
+import { useState } from 'react';
 
-const COLORS = ['#6366f1', '#10b981'];
-
-const mockPerformanceData = [
-  { date: '2025-01', impressions: 12500, clicks: 750, conversions: 25, revenue: 2500 },
-  { date: '2025-02', impressions: 15000, clicks: 900, conversions: 30, revenue: 3000 },
-  { date: '2025-03', impressions: 18000, clicks: 1080, conversions: 36, revenue: 3600 },
-  { date: '2025-04', impressions: 22000, clicks: 1320, conversions: 44, revenue: 4400 },
-  { date: '2025-05', impressions: 25000, clicks: 1500, conversions: 50, revenue: 5000 },
-];
-
-const mockPlatformData = [
-  { name: 'Shopify', value: 60 },
-  { name: 'TikTok Shop', value: 40 },
-];
-
-const mockCategoryData = [
-  { name: 'Electronics', revenue: 4500, orders: 150 },
-  { name: 'Home & Garden', revenue: 3200, orders: 120 },
-  { name: 'Sports', revenue: 2800, orders: 95 },
-  { name: 'Beauty', revenue: 2100, orders: 85 },
-];
 
 export default function Analytics() {
   const [dateRange, setDateRange] = useState("30d");
   const [platform, setPlatform] = useState("all");
-  const [emailAddress, setEmailAddress] = useState("");
-  const chartRef = useRef<HTMLDivElement>(null);
 
   const metrics = {
     totalRevenue: "$21,600",
@@ -77,13 +50,7 @@ export default function Analytics() {
     try {
       const csvContent = [
         ["Date", "Impressions", "Clicks", "Conversions", "Revenue"],
-        ...mockPerformanceData.map(data => [
-          data.date,
-          data.impressions,
-          data.clicks,
-          data.conversions,
-          data.revenue
-        ])
+        ...[]
       ].map(row => row.join(",")).join("\n");
 
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
@@ -91,11 +58,6 @@ export default function Analytics() {
       
       toast.success("Report exported successfully");
 
-      if (emailAddress) {
-        // Simulate email sending
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        toast.success("Report sent to your email");
-      }
     } catch (error) {
       toast.error("Failed to export report");
     }
@@ -230,9 +192,9 @@ export default function Analytics() {
                 <option>Last 90 days</option>
               </select>
             </div>
-            <div className="h-80" ref={chartRef}>
+            <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={mockPerformanceData}>
+                <LineChart data={[]}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
@@ -251,7 +213,7 @@ export default function Analytics() {
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Revenue by Category</h2>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mockCategoryData}>
+              <BarChart data={[]}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -270,7 +232,7 @@ export default function Analytics() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={mockPlatformData}
+                  data={[]}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -279,9 +241,7 @@ export default function Analytics() {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {mockPlatformData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
+                  {[]}
                 </Pie>
                 <Tooltip />
               </PieChart>

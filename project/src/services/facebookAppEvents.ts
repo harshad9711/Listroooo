@@ -166,7 +166,7 @@ export async function logEventWithAdvancedMatching(
 
     return response.data;
   } catch (error) {
-    console.error('Facebook Advanced Matching Event Error:', error.response?.data || error.message);
+    console.error('Facebook Advanced Matching Event Error:', (error as any).response?.data || (error as Error).message);
     throw error;
   }
 }
@@ -226,7 +226,7 @@ export const StandardEvents = {
 
       return response.data;
     } catch (error) {
-      console.error('Facebook Registration Event Error:', error.response?.data || error.message);
+      console.error('Facebook Registration Event Error:', (error as any).response?.data || (error as Error).message);
       throw error;
     }
   }
@@ -292,7 +292,7 @@ export async function testEvent(
 
     return response.data;
   } catch (error) {
-    console.error('Facebook Test Event Error:', error.response?.data || error.message);
+    console.error('Facebook Test Event Error:', (error as any).response?.data || (error as Error).message);
     throw error;
   }
 }

@@ -1,4 +1,4 @@
-import React from "react";
+import { Filter, Plus, Package } from 'lucide-react';
 
 
 export default function ProductPipeline() {

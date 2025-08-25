@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import { User, Building2, CreditCard, Store, Bell, ListChecks, Palette, Shield, Search, HelpCircle } from 'lucide-react';
 
 import toast from 'react-hot-toast';

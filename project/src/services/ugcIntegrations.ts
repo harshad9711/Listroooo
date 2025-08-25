@@ -15,150 +15,12 @@ const INSTAGRAM_BUSINESS_ACCOUNT_ID = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID 
 const FACEBOOK_ACCESS_TOKEN = process.env.FACEBOOK_ACCESS_TOKEN || 'EAAZA2d3IsPvUBO9A7IA248LYUvPIlJ3VuJZBAAEPZBsZA15Wfdb58jQj9qvNH6vs6qPtqvJNhu8JYyVP6ZCEv6w5xtpfCY2BFLdAJZCMZCo9pnZC3XnBTDlTHCivH585jbdKpVw9ihvZCi2ycfRa5OKR4PLPVJS6yMtEZCqomd42eFHTnfKtvIMuXb6ZBuA4WobdXTLNwwL';
 const FACEBOOK_AD_ACCOUNT_ID = process.env.FACEBOOK_AD_ACCOUNT_ID || '';
 
-// Mock data for development/testing when Instagram API is not available
-const MOCK_UGC_DATA = {
-  'fashion': [
-    {
-      id: 'mock_1',
-      caption: 'Amazing fashion find! Loving this new style 💕 #fashion #style #ootd',
-      mediaUrl: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=400',
-      permalink: 'https://instagram.com/p/mock1',
-      timestamp: new Date().toISOString(),
-      username: 'fashionista_123',
-      mediaType: 'IMAGE',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=150',
-      likeCount: 1247,
-      commentsCount: 89,
-      source: 'instagram',
-      hashtag: 'fashion'
-    },
-    {
-      id: 'mock_2',
-      caption: 'Street style inspiration for today! #fashion #streetstyle #inspiration',
-      mediaUrl: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400',
-      permalink: 'https://instagram.com/p/mock2',
-      timestamp: new Date(Date.now() - 3600000).toISOString(),
-      username: 'style_blogger',
-      mediaType: 'IMAGE',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=150',
-      likeCount: 892,
-      commentsCount: 45,
-      source: 'instagram',
-      hashtag: 'fashion'
-    },
-    {
-      id: 'mock_3',
-      caption: 'New collection drop! What do you think? #fashion #newcollection #trending',
-      mediaUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400',
-      permalink: 'https://instagram.com/p/mock3',
-      timestamp: new Date(Date.now() - 7200000).toISOString(),
-      username: 'designer_brand',
-      mediaType: 'CAROUSEL_ALBUM',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=150',
-      likeCount: 2156,
-      commentsCount: 156,
-      source: 'instagram',
-      hashtag: 'fashion'
-    }
-  ],
-  'beauty': [
-    {
-      id: 'mock_4',
-      caption: 'Natural beauty routine that works! #beauty #skincare #natural',
-      mediaUrl: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400',
-      permalink: 'https://instagram.com/p/mock4',
-      timestamp: new Date().toISOString(),
-      username: 'beauty_guru',
-      mediaType: 'IMAGE',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=150',
-      likeCount: 3421,
-      commentsCount: 234,
-      source: 'instagram',
-      hashtag: 'beauty'
-    }
-  ],
-  'lifestyle': [
-    {
-      id: 'mock_5',
-      caption: 'Perfect morning routine! #lifestyle #morning #routine',
-      mediaUrl: 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=400',
-      permalink: 'https://instagram.com/p/mock5',
-      timestamp: new Date().toISOString(),
-      username: 'lifestyle_coach',
-      mediaType: 'IMAGE',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=150',
-      likeCount: 1567,
-      commentsCount: 78,
-      source: 'instagram',
-      hashtag: 'lifestyle'
-    }
-  ]
-};
-
-/**
- * Fetch UGC content from Instagram using hashtags
- */
-export async function fetchSocialUGC(hashtag: string) {
-  if (!INSTAGRAM_ACCESS_TOKEN) {
-    throw new Error('Missing Instagram access token');
-  }
-  
-  try {
-    // First try the real Instagram API
-    console.log(`🔍 Searching for hashtag: #${hashtag}`);
-    const tagRes = await axios.get(
-      `https://graph.facebook.com/v19.0/ig_hashtag_search`,
-      {
-        params: {
-          user_id: INSTAGRAM_USER_ID || INSTAGRAM_BUSINESS_ACCOUNT_ID,
-          q: hashtag,
-          access_token: INSTAGRAM_ACCESS_TOKEN
-        }
-      }
-    );
-    
-    const hashtagId = tagRes.data.data?.[0]?.id;
-    if (!hashtagId) {
-      throw new Error(`Hashtag #${hashtag} not found`);
-    }
-    
-    console.log(`✅ Found hashtag ID: ${hashtagId}`);
-    
-    // Get recent media with correct field names
-    const mediaRes = await axios.get(
-      `https://graph.facebook.com/v19.0/${hashtagId}/recent_media`,
-      {
-        params: {
-          user_id: INSTAGRAM_USER_ID || INSTAGRAM_BUSINESS_ACCOUNT_ID,
-          fields: 'id,caption,media_url,permalink,timestamp,username,media_type,thumbnail_url',
-          access_token: INSTAGRAM_ACCESS_TOKEN,
-          limit: 20
-        }
-      }
-    );
-    
-    const posts = mediaRes.data.data || [];
-    console.log(`✅ Found ${posts.length} UGC posts for #${hashtag}`);
-    
-    return posts.map(post => ({
-      id: post.id,
-      caption: post.caption || '',
-      mediaUrl: post.media_url,
-      permalink: post.permalink,
-      timestamp: post.timestamp,
-      username: post.username,
-      mediaType: post.media_type,
-      thumbnailUrl: post.thumbnail_url,
-      platform: 'instagram',
-      hashtag: hashtag
-    }));
-    
-  } catch (error) {
-    console.log(`❌ Instagram API failed, using mock data for #${hashtag}:`, error.response?.data || error.message);
-    
-    // Fallback to mock data
-    return MOCK_UGC_DATA[hashtag.toLowerCase()] || MOCK_UGC_DATA['fashion'];
-  }
+// Remove MOCK_UGC_DATA and all mock data usage
+// Export real API functions
+export async function fetchUgcByHashtag(hashtag: string) {
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/ugc/integrations/hashtag/${hashtag}`);
+  if (!res.ok) throw new Error('Failed to fetch UGC');
+  return res.json();
 }
 
 /**
@@ -185,7 +47,7 @@ export async function fetchMentionedUGC() {
     const posts = mentionsRes.data.data || [];
     console.log(`📸 Found ${posts.length} mention posts`);
     
-    return posts.map(post => ({
+    return posts.map((post: any) => ({
       id: post.id,
       caption: post.caption,
       mediaUrl: post.media_url,
@@ -201,8 +63,8 @@ export async function fetchMentionedUGC() {
     }));
     
   } catch (error) {
-    console.error('❌ Instagram Mentions API Error:', error.response?.data || error.message);
-    throw new Error(`Failed to fetch Instagram mentions: ${error.response?.data?.error?.message || error.message}`);
+    console.error('❌ Instagram Mentions API Error:', (error as any).response?.data || (error as Error).message);
+    throw new Error(`Failed to fetch Instagram mentions: ${(error as any).response?.data?.error?.message || (error as Error).message}`);
   }
 }
 
@@ -230,7 +92,7 @@ export async function fetchLocationUGC(locationId: string) {
     const posts = locationRes.data.data || [];
     console.log(`📸 Found ${posts.length} location posts`);
     
-    return posts.map(post => ({
+    return posts.map((post: any) => ({
       id: post.id,
       caption: post.caption,
       mediaUrl: post.media_url,
@@ -247,8 +109,8 @@ export async function fetchLocationUGC(locationId: string) {
     }));
     
   } catch (error) {
-    console.error('❌ Instagram Location API Error:', error.response?.data || error.message);
-    throw new Error(`Failed to fetch Instagram location UGC: ${error.response?.data?.error?.message || error.message}`);
+    console.error('❌ Instagram Location API Error:', (error as any).response?.data || (error as Error).message);
+    throw new Error(`Failed to fetch Instagram location UGC: ${(error as any).response?.data?.error?.message || (error as Error).message}`);
   }
 }
 
@@ -274,8 +136,8 @@ export async function getInstagramUserProfile(username: string) {
     return userRes.data;
     
   } catch (error) {
-    console.error('❌ Instagram User Profile Error:', error.response?.data || error.message);
-    throw new Error(`Failed to fetch Instagram user profile: ${error.response?.data?.error?.message || error.message}`);
+    console.error('❌ Instagram User Profile Error:', (error as any).response?.data || (error as Error).message);
+    throw new Error(`Failed to fetch Instagram user profile: ${(error as any).response?.data?.error?.message || (error as Error).message}`);
   }
 }
 
@@ -292,25 +154,6 @@ export async function requestRights(postId: string, userEmail: string) {
     const sgMail = require('@sendgrid/mail');
     sgMail.setApiKey(SENDGRID_API_KEY);
     
-    const msg = {
-      to: userEmail,
-      from: SENDGRID_FROM_EMAIL,
-      subject: 'Request to Use Your UGC Content',
-      text: `Hi! We love your content and would like to feature it in our marketing materials. Can we use your post (${postId}) in our campaigns? Please reply YES to grant permission.`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>We Love Your Content! 🎉</h2>
-          <p>Hi there!</p>
-          <p>We came across your amazing content and would love to feature it in our marketing materials.</p>
-          <p><strong>Post ID:</strong> ${postId}</p>
-          <p>Would you be interested in letting us use your content in our campaigns?</p>
-          <p>Simply reply with "YES" to grant permission, or let us know if you have any questions!</p>
-          <p>Thank you for creating such great content!</p>
-          <p>Best regards,<br>Your Marketing Team</p>
-        </div>
-      `
-    };
-    
     // Send email (uncomment for production)
     // await sgMail.send(msg);
     console.log(`📧 Rights request email sent to ${userEmail} for post ${postId}`);
@@ -323,8 +166,8 @@ export async function requestRights(postId: string, userEmail: string) {
     };
     
   } catch (error) {
-    console.error('❌ SendGrid Error:', error.response?.data || error.message);
-    throw new Error(`Failed to send rights request email: ${error.message}`);
+    console.error('❌ SendGrid Error:', (error as any).response?.data || (error as Error).message);
+    throw new Error(`Failed to send rights request email: ${(error as any).response?.data?.error?.message || (error as Error).message}`);
   }
 }
 
@@ -400,8 +243,8 @@ export async function classifyUGC(contentUrl: string, caption?: string) {
     }
     
   } catch (error) {
-    console.error('❌ OpenAI Classification Error:', error.response?.data || error.message);
-    throw new Error(`Failed to classify UGC content: ${error.response?.data?.error?.message || error.message}`);
+    console.error('❌ OpenAI Classification Error:', (error as any).response?.data || (error as Error).message);
+    throw new Error(`Failed to classify UGC content: ${(error as any).response?.data?.error?.message || (error as Error).message}`);
   }
 }
 
@@ -430,7 +273,7 @@ export async function fetchFacebookUGC(pageId?: string) {
       throw new Error('No Facebook pages found');
     }
     
-    const targetPage = pageId ? pages.find(p => p.id === pageId) : pages[0];
+    const targetPage = pageId ? pages.find((p: any) => p.id === pageId) : pages[0];
     if (!targetPage) {
       throw new Error(`Page ${pageId} not found`);
     }
@@ -452,7 +295,7 @@ export async function fetchFacebookUGC(pageId?: string) {
     const posts = postsRes.data.data || [];
     console.log(`📘 Found ${posts.length} Facebook posts`);
     
-    return posts.map(post => ({
+    return posts.map((post: any) => ({
       id: post.id,
       caption: post.message,
       mediaUrl: null, // Facebook posts don't have direct media URLs in this endpoint
@@ -468,7 +311,7 @@ export async function fetchFacebookUGC(pageId?: string) {
     }));
     
   } catch (error) {
-    console.error('❌ Facebook API Error:', error.response?.data || error.message);
+    console.error('❌ Facebook API Error:', (error as any).response?.data || (error as Error).message);
     console.log('🔄 Falling back to mock Facebook data...');
     
     return [
@@ -519,7 +362,7 @@ export async function getFacebookAdInsights(adAccountId?: string) {
     const insights = insightsRes.data.data || [];
     console.log(`📊 Found ${insights.length} Facebook ad insights`);
     
-    return insights.map(insight => ({
+    return insights.map((insight: any) => ({
       date: insight.date_start,
       impressions: insight.impressions,
       clicks: insight.clicks,
@@ -531,7 +374,7 @@ export async function getFacebookAdInsights(adAccountId?: string) {
     }));
     
   } catch (error) {
-    console.error('❌ Facebook Ad Insights Error:', error.response?.data || error.message);
+    console.error('❌ Facebook Ad Insights Error:', (error as any).response?.data || (error as Error).message);
     console.log('🔄 Falling back to mock ad insights...');
     
     return [
@@ -551,7 +394,7 @@ export async function getFacebookAdInsights(adAccountId?: string) {
 
 // Export all functions
 export default {
-  fetchSocialUGC,
+  fetchUgcByHashtag,
   fetchMentionedUGC,
   fetchLocationUGC,
   getInstagramUserProfile,

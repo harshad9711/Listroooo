@@ -1,36 +1,18 @@
-import React, { useState, useEffect } from 'react';
-
+import { useState, useEffect } from 'react';
+import { ArrowRight, Sliders, Sparkles, ExternalLink, Star, Edit, Copy, RotateCcw, ThumbsUp, ThumbsDown, Split } from 'lucide-react';
 
 
 const AIOptimizer = () => {
   const [step, setStep] = useState(1);
   const [optimizing, setOptimizing] = useState(false);
-  const [optimizationComplete, setOptimizationComplete] = useState(false);
   const [activeTab, setActiveTab] = useState('title');
+  const [product, setProduct] = useState<any>(null);
   
-  // Mock product data
-  const product = {
-    id: '1',
-    name: 'Wireless Earbuds Pro',
-    description: 'Premium wireless earbuds with noise cancellation technology. Comes with charging case and multiple ear tips for maximum comfort.',
-    platform: 'Amazon',
-    category: 'Electronics > Audio > Headphones',
-    keywords: 'wireless earbuds, noise cancelling, bluetooth earphones, in-ear headphones',
-    originalTitle: 'Wireless Earbuds Pro with Noise Cancellation',
-    originalDescription: 'Premium wireless earbuds with noise cancellation technology. Comes with charging case and multiple ear tips for maximum comfort. Features Bluetooth 5.0 connectivity, IPX5 water resistance, and up to 20 hours of battery life.',
-    originalKeywords: 'wireless earbuds, noise cancelling, bluetooth headphones',
-    optimizedTitle: 'Premium Wireless Earbuds Pro with Active Noise Cancellation, Bluetooth 5.0, IPX5 Waterproof, 20H Battery Life, Charging Case & Multiple Ear Tips',
-    optimizedDescription: `Experience unparalleled audio clarity with our Premium Wireless Earbuds Pro featuring state-of-the-art Active Noise Cancellation technology that blocks out ambient sounds for immersive listening.
-
-These Bluetooth 5.0 earbuds deliver a rock-solid connection up to 33 feet, with no audio dropouts or frustrating pairing issues. The advanced IPX5 waterproof rating ensures protection from sweat and rain, making them perfect for workouts and outdoor activities.
-
-Enjoy up to 20 hours of battery life with the included compact charging case - 5 hours of continuous playtime on a single charge, plus 15 additional hours from the case. Quick-charge technology gives you 1 hour of playtime with just 10 minutes of charging.
-
-Designed for all-day comfort, these earbuds come with multiple silicone ear tip sizes to ensure a perfect, comfortable fit for any ear shape. The intuitive touch controls allow easy management of your music, calls, and voice assistant without reaching for your phone.
-
-What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M/L), USB-C Charging Cable, User Manual, and our 18-Month Warranty.`,
-    optimizedKeywords: 'wireless earbuds, active noise cancellation, bluetooth 5.0 earbuds, waterproof earbuds, long battery earphones, comfortable earbuds, true wireless earbuds, earbuds with charging case, premium earbuds',
-  };
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/products/1`)
+      .then(res => res.json())
+      .then(data => setProduct(data));
+  }, []);
   
   const handleOptimize = () => {
     setOptimizing(true);
@@ -38,7 +20,6 @@ What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M
     // Simulate API call delay
     setTimeout(() => {
       setOptimizing(false);
-      setOptimizationComplete(true);
       setStep(3);
     }, 3000);
   };
@@ -47,7 +28,7 @@ What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M
     if (step > 1) {
       setStep(step - 1);
       if (step === 3) {
-        setOptimizationComplete(false);
+        // setOptimizationComplete(false); // This line was removed
       }
     }
   };
@@ -122,10 +103,10 @@ What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-md font-medium text-gray-900 dark:text-white">
-                        {product.name}
+                        {product?.name}
                       </h4>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Platform: {product.platform}
+                        Platform: {product?.platform}
                       </p>
                     </div>
                     <input 
@@ -218,7 +199,7 @@ What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M
               </div>
               <div className="text-right">
                 <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Selected Product</h4>
-                <p className="text-sm text-indigo-600 dark:text-indigo-400">{product.name}</p>
+                <p className="text-sm text-indigo-600 dark:text-indigo-400">{product?.name}</p>
               </div>
             </div>
           </div>
@@ -320,7 +301,7 @@ What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M
                     onChange={() => {}}
                   />
                   <label htmlFor="guidelines" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                    Ensure compliance with {product.platform} guidelines
+                    Ensure compliance with {product?.platform} guidelines
                   </label>
                 </div>
               </div>
@@ -395,7 +376,7 @@ What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M
               </div>
               <div className="text-right">
                 <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Selected Product</h4>
-                <p className="text-sm text-indigo-600 dark:text-indigo-400">{product.name}</p>
+                <p className="text-sm text-indigo-600 dark:text-indigo-400">{product?.name}</p>
               </div>
             </div>
           </div>
@@ -442,7 +423,7 @@ What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M
                   <div>
                     <div className="mb-4 pb-4 border-b dark:border-gray-700">
                       <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Original Title</h4>
-                      <p className="text-sm text-gray-900 dark:text-gray-100">{product.originalTitle}</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{product?.originalTitle}</p>
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-2">
@@ -460,7 +441,7 @@ What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M
                         </div>
                       </div>
                       <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg p-3">
-                        <p className="text-sm text-gray-900 dark:text-gray-100">{product.optimizedTitle}</p>
+                        <p className="text-sm text-gray-900 dark:text-gray-100">{product?.optimizedTitle}</p>
                       </div>
                       <div className="flex items-center justify-between mt-4">
                         <div className="flex items-center">
@@ -474,7 +455,7 @@ What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M
                           </button>
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          Character count: {product.optimizedTitle.length} / 200
+                          Character count: {product?.optimizedTitle?.length} / 200
                         </div>
                       </div>
                     </div>
@@ -485,7 +466,7 @@ What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M
                   <div>
                     <div className="mb-4 pb-4 border-b dark:border-gray-700">
                       <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Original Description</h4>
-                      <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-line">{product.originalDescription}</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-line">{product?.originalDescription}</p>
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-2">
@@ -503,7 +484,7 @@ What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M
                         </div>
                       </div>
                       <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg p-3 max-h-96 overflow-y-auto">
-                        <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-line">{product.optimizedDescription}</p>
+                        <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-line">{product?.optimizedDescription}</p>
                       </div>
                       <div className="flex items-center justify-between mt-4">
                         <div className="flex items-center">
@@ -517,7 +498,7 @@ What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M
                           </button>
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          Character count: {product.optimizedDescription.length} / 2000
+                          Character count: {product?.optimizedDescription?.length} / 2000
                         </div>
                       </div>
                     </div>
@@ -528,7 +509,7 @@ What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M
                   <div>
                     <div className="mb-4 pb-4 border-b dark:border-gray-700">
                       <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Original Keywords</h4>
-                      <p className="text-sm text-gray-900 dark:text-gray-100">{product.originalKeywords}</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{product?.originalKeywords}</p>
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-2">
@@ -547,7 +528,7 @@ What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M
                       </div>
                       <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg p-3">
                         <div className="flex flex-wrap gap-2">
-                          {product.optimizedKeywords.split(', ').map((keyword, index) => (
+                          {product?.optimizedKeywords?.split(', ').map((keyword: string, index: number) => (
                             <span 
                               key={index}
                               className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-300"
@@ -569,7 +550,7 @@ What's in the box: Wireless Earbuds Pro, Charging Case, 3 Sizes of Ear Tips (S/M
                           </button>
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          Keyword count: {product.optimizedKeywords.split(', ').length}
+                          Keyword count: {product?.optimizedKeywords?.split(', ').length}
                         </div>
                       </div>
                     </div>

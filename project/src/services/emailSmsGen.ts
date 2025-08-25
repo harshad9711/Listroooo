@@ -214,8 +214,7 @@ export class EmailSmsGeneratorService {
   async generateEmailContent(
     category: string,
     brandName: string,
-    productInfo?: any,
-    customPrompt?: string
+    productInfo?: any
   ): Promise<{ subject: string; preview_text: string; content: string }> {
     try {
       // In a real implementation, this would call an AI service like OpenAI
@@ -240,8 +239,7 @@ export class EmailSmsGeneratorService {
   async generateSmsContent(
     category: string,
     brandName: string,
-    productInfo?: any,
-    customPrompt?: string
+    productInfo?: any
   ): Promise<{ content: string }> {
     try {
       const templates = this.getSmsTemplateVariations(category, brandName, productInfo);

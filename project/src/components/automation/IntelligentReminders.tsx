@@ -1,13 +1,10 @@
-import { useState } from "react";
-import { Card, Title, Text } from '@tremor/react';
+import { useState, useEffect } from "react";
 import {
   Bell, 
   Plus, 
-  Calendar, 
   Clock, 
   Users, 
   Mail, 
-  MessageSquare,
   TrendingUp,
   DollarSign,
   FileText,
@@ -16,7 +13,6 @@ import {
   Play,
   Pause
 } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 interface Reminder {
   id: string;
@@ -35,59 +31,15 @@ interface Reminder {
   };
 }
 
-const mockReminders: Reminder[] = [
-  {
-    id: '1',
-    title: 'Monthly Budget Review',
-    description: 'Review monthly ad spend and budget allocation',
-    type: 'budget_review',
-    frequency: 'monthly',
-    recipients: ['finance@company.com', 'marketing@company.com'],
-    nextDue: '2025-07-01T09:00:00Z',
-    lastSent: '2025-06-01T09:00:00Z',
-    status: 'active',
-    contextData: {
-      includeMetrics: true,
-      attachReports: true,
-      customMessage: 'Please review the attached budget analysis and provide feedback by EOD.'
-    }
-  },
-  {
-    id: '2',
-    title: 'Weekly Campaign Performance Check',
-    description: 'Review campaign performance and optimization opportunities',
-    type: 'campaign_check',
-    frequency: 'weekly',
-    recipients: ['marketing-team@company.com'],
-    nextDue: '2025-06-10T08:00:00Z',
-    lastSent: '2025-06-03T08:00:00Z',
-    status: 'active',
-    contextData: {
-      includeMetrics: true,
-      attachReports: false
-    }
-  },
-  {
-    id: '3',
-    title: 'Quarterly Business Review Prep',
-    description: 'Prepare materials for quarterly business review meeting',
-    type: 'meeting',
-    frequency: 'quarterly',
-    recipients: ['executives@company.com'],
-    nextDue: '2025-07-15T10:00:00Z',
-    lastSent: '2025-04-15T10:00:00Z',
-    status: 'active',
-    contextData: {
-      includeMetrics: true,
-      attachReports: true,
-      customMessage: 'QBR materials are ready for review. Meeting scheduled for next week.'
-    }
-  }
-];
-
 export default function IntelligentReminders() {
-  const [reminders, setReminders] = useState(mockReminders);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/automation/reminders`)
+      .then(res => res.json())
+      .then(data => setReminders(data));
+  }, []);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -128,26 +80,26 @@ export default function IntelligentReminders() {
           ? { ...reminder, status: reminder.status === 'active' ? 'paused' : 'active' }
           : reminder
       ));
-      toast.success('Reminder status updated');
+      alert('Reminder status updated');
     } catch (error) {
-      toast.error('Failed to update reminder status');
+      alert('Failed to update reminder status');
     }
   };
 
   const handleDeleteReminder = async (reminderId: string) => {
     try {
       setReminders(prev => prev.filter(reminder => reminder.id !== reminderId));
-      toast.success('Reminder deleted');
+      alert('Reminder deleted');
     } catch (error) {
-      toast.error('Failed to delete reminder');
+      alert('Failed to delete reminder');
     }
   };
 
   const handleSendNow = async (_reminderId: string) => {
     try {
-      toast.success('Reminder sent successfully');
+      alert('Reminder sent successfully');
     } catch (error) {
-      toast.error('Failed to send reminder');
+      alert('Failed to send reminder');
     }
   };
 
@@ -161,18 +113,18 @@ export default function IntelligentReminders() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-white dark:bg-gray-800">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <Title>Intelligent Reminders</Title>
-              <Text className="text-gray-500 dark:text-gray-400">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Intelligent Reminders</h2>
+              <p className="text-gray-500 dark:text-gray-400">
                 Smart reminders with contextual data and automated scheduling
-              </Text>
+              </p>
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="btn-primary"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               <Plus className="h-4 w-4 mr-2" />
               Create Reminder
@@ -216,7 +168,7 @@ export default function IntelligentReminders() {
                           : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
                       }`}>
                         {reminder.status === 'active' ? (
-                          <CheckCircle className="w-3 h-3 mr-1" />
+                          <Play className="w-3 h-3 mr-1" />
                         ) : (
                           <Pause className="w-3 h-3 mr-1" />
                         )}
@@ -225,73 +177,38 @@ export default function IntelligentReminders() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Schedule & Recipients */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                        Schedule & Recipients
-                      </h4>
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recipients</h4>
+                      <div className="space-y-1">
+                        {reminder.recipients.map((recipient, index) => (
+                          <div key={index} className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                            <Mail className="h-4 w-4" />
+                            <span>{recipient}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Schedule</h4>
                       <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
-                            Next due: {new Date(reminder.nextDue).toLocaleString()}
-                          </span>
-                          {isOverdue && (
-                            <span className="text-xs text-red-600 dark:text-red-400 font-medium">
-                              (Overdue)
-                            </span>
-                          )}
-                          {isDueSoon && (
-                            <span className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">
-                              (Due soon)
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Users className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {reminder.recipients.length} recipient(s)
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-500 dark:text-gray-400">Next Due:</span>
+                          <span className={`font-medium ${
+                            isOverdue ? 'text-red-600 dark:text-red-400' : 
+                            isDueSoon ? 'text-yellow-600 dark:text-yellow-400' : 
+                            'text-gray-900 dark:text-white'
+                          }`}>
+                            {new Date(reminder.nextDue).toLocaleDateString()}
+                            {isOverdue && ` (${Math.abs(daysUntilDue)} days overdue)`}
+                            {isDueSoon && ` (in ${daysUntilDue} days)`}
                           </span>
                         </div>
                         {reminder.lastSent && (
-                          <div className="flex items-center space-x-2">
-                            <Mail className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                              Last sent: {new Date(reminder.lastSent).toLocaleDateString()}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Context & Settings */}
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                        Context & Settings
-                      </h4>
-                      <div className="space-y-2">
-                        {reminder.contextData?.includeMetrics && (
-                          <div className="flex items-center space-x-2">
-                            <TrendingUp className="h-4 w-4 text-green-500" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                              Include latest metrics
-                            </span>
-                          </div>
-                        )}
-                        {reminder.contextData?.attachReports && (
-                          <div className="flex items-center space-x-2">
-                            <FileText className="h-4 w-4 text-blue-500" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                              Attach reports
-                            </span>
-                          </div>
-                        )}
-                        {reminder.contextData?.customMessage && (
-                          <div className="flex items-start space-x-2">
-                            <MessageSquare className="h-4 w-4 text-purple-500 mt-0.5" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                              Custom message included
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-500 dark:text-gray-400">Last Sent:</span>
+                            <span className="text-gray-900 dark:text-white">
+                              {new Date(reminder.lastSent).toLocaleDateString()}
                             </span>
                           </div>
                         )}
@@ -299,92 +216,77 @@ export default function IntelligentReminders() {
                     </div>
                   </div>
 
-                  {reminder.contextData?.customMessage && (
-                    <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        "{reminder.contextData.customMessage}"
-                      </p>
+                  {reminder.contextData && (
+                    <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-600 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Context Settings</h4>
+                      <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
+                        {reminder.contextData.includeMetrics && (
+                          <span className="flex items-center space-x-1">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <span>Include Metrics</span>
+                          </span>
+                        )}
+                        {reminder.contextData.attachReports && (
+                          <span className="flex items-center space-x-1">
+                            <FileText className="h-4 w-4 text-blue-500" />
+                            <span>Attach Reports</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )}
 
-                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          Recipients: {reminder.recipients.join(', ')}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleSendNow(reminder.id)}
-                          className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500"
-                        >
-                          Send Now
-                        </button>
-                        <button
-                          onClick={() => handleToggleStatus(reminder.id)}
-                          className="text-gray-400 hover:text-gray-500"
-                        >
-                          {reminder.status === 'active' ? (
-                            <Pause className="h-4 w-4" />
-                          ) : (
-                            <Play className="h-4 w-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteReminder(reminder.id)}
-                          className="text-gray-400 hover:text-red-500"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleToggleStatus(reminder.id)}
+                        className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        {reminder.status === 'active' ? (
+                          <>
+                            <Pause className="h-4 w-4 mr-1" />
+                            Pause
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-4 w-4 mr-1" />
+                            Activate
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleSendNow(reminder.id)}
+                        className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <Mail className="h-4 w-4 mr-1" />
+                        Send Now
+                      </button>
                     </div>
+                    <button
+                      onClick={() => handleDeleteReminder(reminder.id)}
+                      className="text-gray-400 hover:text-red-500"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               );
             })}
-
-            {reminders.length === 0 && (
-              <div className="text-center py-12">
-                <Bell className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No reminders configured</h3>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Get started by creating your first intelligent reminder
-                </p>
-                <div className="mt-6">
-                  <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="btn-primary"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Reminder
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
-      </Card>
+      </div>
 
-      {/* Create/Edit Modal would go here */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl mx-4">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              Create New Reminder
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Set up intelligent reminders with contextual data
-            </p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Create New Reminder</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-4">Reminder creation coming soon...</p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="btn-secondary"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
               >
                 Cancel
-              </button>
-              <button className="btn-primary">
-                Create Reminder
               </button>
             </div>
           </div>
