@@ -65,6 +65,12 @@ import AdCreativePerformance from './pages/AdCreativePerformance';
 import EmailSmsGenerator from './pages/EmailSmsGenerator';
 import UGCDashboard from './pages/UGCDashboard';
 import Veo3Production from './pages/Veo3Production';
+import Veo3PromptBuilder from './pages/Veo3PromptBuilder';
+import Veo3PromptBuilderNew from './pages/Veo3PromptBuilderNew';
+import VeoBuilder from './pages/VeoBuilder';
+import VeoBuilderPro from './pages/VeoBuilderPro';
+import VeoBuilderProTest from './pages/VeoBuilderProTest';
+import SimpleTest from './pages/SimpleTest';
 import TermsOfService from './pages/TermsOfService';
 import Verification from './pages/Verification';
 import Login from './pages/auth/Login';
@@ -113,6 +119,9 @@ function App() {
           </Helmet>
           <Toaster position="top-right" />
           <Routes>
+            {/* Veo Builder - Must be first to avoid catch-all route */}
+            <Route path="/veo-builder-pro" element={<RouteErrorBoundary><VeoBuilderPro /></RouteErrorBoundary>} />
+            
             <Route path="/login" element={<Login/>}/>
             <Route path="/register" element={<Register/>}/>
             <Route path="/forgot-password" element={<ForgotPassword/>}/>
@@ -149,6 +158,9 @@ function App() {
               <Route path="/ad-performance" element={<RouteErrorBoundary><AdCreativePerformance /></RouteErrorBoundary>} />
               <Route path="/email-sms-generator" element={<RouteErrorBoundary><EmailSmsGenerator /></RouteErrorBoundary>} />
               <Route path="/veo3-production" element={<RouteErrorBoundary><Veo3Production /></RouteErrorBoundary>} />
+              <Route path="/veo3-prompt-builder" element={<RouteErrorBoundary><Veo3PromptBuilder /></RouteErrorBoundary>} />
+              <Route path="/veo3-prompt-builder-new" element={<RouteErrorBoundary><Veo3PromptBuilderNew /></RouteErrorBoundary>} />
+              <Route path="/veo-builder" element={<RouteErrorBoundary><VeoBuilder /></RouteErrorBoundary>} />
               <Route path="/ugc" element={<RouteErrorBoundary><UGCDashboard /></RouteErrorBoundary>} />
               
               {/* Market Intelligence section */}

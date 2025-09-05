@@ -2,10 +2,12 @@
   "name": "ugc-api-server",
   "version": "1.0.0",
   "description": "UGC API Server for handling UGC endpoints",
-  "main": "ugc-server.js",
+  "type": "module",
+  "main": "veo-server.js",
   "scripts": {
-    "start": "node ugc-server.js",
-    "dev": "nodemon ugc-server.js"
+    "start": "node veo-server.js",
+    "dev": "nodemon veo-server.js",
+    "start:ugc": "node ugc-server.js"
   },
   "dependencies": {
     "@sentry/node": "^7.92.0",

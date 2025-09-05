@@ -1,0 +1,926 @@
+import dotenv from 'dotenv';
+import express from 'express';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import session from 'express-session';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import Sentry from '@sentry/node';
+
+dotenv.config();
+Sentry.init({ dsn: process.env.SENTRY_DSN });
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// Import Veo routes
+import veoRoutes from './veo-routes.js';
+
+// Sentry request handler (must be first middleware)
+app.use(Sentry.Handlers.requestHandler());
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'replace_this_with_a_real_secret',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false } // Set to true if using HTTPS
+}));
+
+// Mock data for development
+// const mockUGCContent = [
+//   {
+//     id: 'ugc_1',
+//     platform: 'instagram',
+//     content_type: 'video',
+//     author: {
+//       username: 'user_123',
+//       followers: 15000,
+//       verified: true
+//     },
+//     content: {
+//       url: 'https://example.com/video1.mp4',
+//       thumbnail_url: 'https://picsum.photos/300/400?random=1',
+//       duration: 30,
+//       caption: 'Amazing product! #brand #lifestyle',
+//       hashtags: ['brand', 'lifestyle', 'product'],
+//       mentions: [],
+//       location: 'New York, NY'
+//     },
+//     engagement: {
+//       likes: 1200,
+//       comments: 89,
+//       shares: 156,
+//       views: 50000,
+//       reach: 250000
+//     },
+//     rights_status: 'pending',
+//     brand_tags: ['brand', 'product'],
+//     sentiment_score: 0.8,
+//     quality_score: 8.5,
+//     created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+//     discovered_at: new Date().toISOString()
+//   },
+//   {
+//     id: 'ugc_2',
+//     platform: 'tiktok',
+//     content_type: 'video',
+//     author: {
+//       username: 'creator_456',
+//       followers: 25000,
+//       verified: false
+//     },
+//     content: {
+//       url: 'https://example.com/video2.mp4',
+//       thumbnail_url: 'https://picsum.photos/300/400?random=2',
+//       duration: 45,
+//       caption: 'Check out this incredible product! #brand #amazing',
+//       hashtags: ['brand', 'amazing', 'product'],
+//       mentions: [],
+//       location: 'Los Angeles, CA'
+//     },
+//     engagement: {
+//       likes: 2300,
+//       comments: 145,
+//       shares: 234,
+//       views: 75000,
+//       reach: 350000
+//     },
+//     rights_status: 'approved',
+//     brand_tags: ['brand', 'product'],
+//     sentiment_score: 0.9,
+//     quality_score: 9.2,
+//     created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+//     discovered_at: new Date().toISOString()
+//   }
+// ];
+
+// const mockInboxItems = [
+//   {
+//     id: 'inbox_1',
+//     content: mockUGCContent[0],
+//     edits: [],
+//     voiceovers: [],
+//     hotspots: [],
+//     status: 'new',
+//     notes: '',
+//     created_at: new Date().toISOString(),
+//     updated_at: new Date().toISOString()
+//   },
+//   {
+//     id: 'inbox_2',
+//     content: mockUGCContent[1],
+//     edits: [],
+//     voiceovers: [],
+//     hotspots: [],
+//     status: 'approved',
+//     notes: 'Great content, approved for use',
+//     created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+//     updated_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+//   }
+// ];
+
+// In-memory mock analytics DB for feedback events
+const mockFeedbackEvents = [];
+
+// Shopify Integration (OAuth, Store Info, Products)
+const axios = require('axios');
+const querystring = require('querystring');
+const { Pool } = require('pg');
+const db = new Pool({
+  host: process.env.PGHOST,
+  user: process.env.PGUSER,
+  password: process.env.PGPASSWORD,
+  database: process.env.PGDATABASE,
+  port: process.env.PGPORT ? parseInt(process.env.PGPORT, 10) : 5432,
+});
+
+const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY;
+const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET;
+const SHOPIFY_SCOPES = process.env.SHOPIFY_SCOPES || 'read_products,read_orders,read_customers,read_inventory';
+const SHOPIFY_REDIRECT_URI = process.env.SHOPIFY_REDIRECT_URI || 'http://localhost:3001/api/shopify/callback';
+
+export async function POST(req: NextRequest){
+  const userId = await getUserId(req);
+  if (userId === "demo-user") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // ✅ env guards give JSON errors instead of crashing
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json({ error: "Missing OPENAI_API_KEY" }, { status: 500 });
+  }
+
+  try {
+    const bodyText = await req.text();                 // ✅ safer read
+    const body = bodyText ? JSON.parse(bodyText) : {};
+    const idea = body?.idea;
+    if (!idea || typeof idea !== "string") {
+      return NextResponse.json({ error: "Missing 'idea' (string)" }, { status: 400 });
+    }
+
+    const prompt = await ideaToJsonViaOpenAI(idea);
+    const safe = PromptSchema.parse(prompt);
+    return NextResponse.json({ prompt: safe, ideaHash: hashIdea(idea) }, { status: 200 });
+
+  } catch (err: any) {
+    // ✅ always return JSON, even when OpenAI fails
+    const msg = err?.message || "LLM failure";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+import { NextRequest, NextResponse } from "next/server";
+import { ideaToJsonViaOpenAI, hashIdea } from "@/lib/veo-llm";
+import { PromptSchema } from "@/lib/veo-schema";
+import { getUserId } from "@/lib/auth";
+
+export const runtime = "nodejs";         // ✅ avoid Edge (uses node:crypto, supabase cookies)
+export const dynamic = "force-dynamic";  // ✅ ensure no static/cached behavior in dev
+
+export async function POST(req: NextRequest){
+  const userId = await getUserId(req);
+  if (userId === "demo-user") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // ✅ env guards give JSON errors instead of crashing
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json({ error: "Missing OPENAI_API_KEY" }, { status: 500 });
+  }
+
+  try {
+    const bodyText = await req.text();                 // ✅ safer read
+    const body = bodyText ? JSON.parse(bodyText) : {};
+    const idea = body?.idea;
+    if (!idea || typeof idea !== "string") {
+      return NextResponse.json({ error: "Missing 'idea' (string)" }, { status: 400 });
+    }
+
+    const prompt = await ideaToJsonViaOpenAI(idea);
+    const safe = PromptSchema.parse(prompt);
+    return NextResponse.json({ prompt: safe, ideaHash: hashIdea(idea) }, { status: 200 });
+
+  } catch (err: any) {
+    // ✅ always return JSON, even when OpenAI fails
+    const msg = err?.message || "LLM failure";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+http://localhost:3001/api/shopify/callback';
+
+// Helper: get userId (replace with real auth in production)
+function getUserId(req) {
+  // For demo, use sessionID
+  return req.sessionID;
+}
+
+// JWT authentication middleware
+function authenticateJWT(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) return res.status(401).json({ error: 'Missing Authorization header' });
+  const token = authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Missing token' });
+  jwt.verify(token, process.env.JWT_SECRET || 'dev_jwt_secret', (err, user) => {
+    if (err) return res.status(401).json({ error: 'Invalid token' });
+    req.user = user;
+    next();
+  });
+}
+
+// Protect all /api/ugc endpoints
+app.use('/api/ugc', authenticateJWT);
+
+// Routes
+
+// GET /api/ugc/analytics
+app.get('/api/ugc/analytics', async (req, res) => {
+  try {
+    // Get total content
+    const totalContentResult = await db.query('SELECT COUNT(*) FROM ugc_content');
+    const totalContent = parseInt(totalContentResult.rows[0].count, 10);
+
+    // Get total inbox items
+    const totalInboxItemsResult = await db.query('SELECT COUNT(*) FROM ugc_inbox');
+    const totalInboxItems = parseInt(totalInboxItemsResult.rows[0].count, 10);
+
+    // Get content by platform
+    const contentByPlatformResult = await db.query('SELECT platform, COUNT(*) FROM ugc_content GROUP BY platform');
+    const contentByPlatform = {};
+    contentByPlatformResult.rows.forEach(row => {
+      contentByPlatform[row.platform] = parseInt(row.count, 10);
+    });
+
+    // Get content by status
+    const contentByStatusResult = await db.query('SELECT status, COUNT(*) FROM ugc_inbox GROUP BY status');
+    const contentByStatus = {};
+    contentByStatusResult.rows.forEach(row => {
+      contentByStatus[row.status] = parseInt(row.count, 10);
+    });
+
+    // Get recent activity (last 2 discovered)
+    const recentActivityResult = await db.query('SELECT * FROM ugc_content ORDER BY discovered_at DESC LIMIT 2');
+    const recentActivity = recentActivityResult.rows.map(item => ({
+      type: 'discovered',
+      item,
+      date: item.discovered_at
+    }));
+
+    // Placeholder for edits/voiceovers (if you add those tables later)
+    const totalEdits = 5;
+    const totalVoiceovers = 3;
+
+    res.json({
+      totalContent,
+      totalInboxItems,
+      totalEdits,
+      totalVoiceovers,
+      contentByPlatform,
+      contentByStatus,
+      recentActivity
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch analytics' });
+  }
+});
+
+// GET /api/ugc/inbox
+app.get('/api/ugc/inbox', async (req, res) => {
+  const { status } = req.query;
+  try {
+    let query = 'SELECT * FROM ugc_inbox';
+    let params = [];
+    if (status && status !== 'all') {
+      query += ' WHERE status = $1';
+      params.push(status);
+    }
+    const result = await db.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch inbox items' });
+  }
+});
+
+// PUT /api/ugc/inbox/:id
+app.put('/api/ugc/inbox/:id', async (req, res) => {
+  const { id } = req.params;
+  const { status, notes } = req.body;
+  try {
+    const result = await db.query(
+      'UPDATE ugc_inbox SET status = $1, notes = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
+      [status, notes, id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Inbox item not found' });
+    }
+    res.json({ success: true, item: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update inbox item' });
+  }
+});
+
+// POST /api/ugc/inbox
+app.post('/api/ugc/inbox', async (req, res) => {
+  const { contentId } = req.body;
+  try {
+    // Check if content exists
+    const contentResult = await db.query('SELECT id FROM ugc_content WHERE id = $1', [contentId]);
+    if (contentResult.rowCount === 0) {
+      return res.status(404).json({ error: 'Content not found' });
+    }
+    const result = await db.query(
+      `INSERT INTO ugc_inbox (content_id, status, notes, created_at, updated_at)
+       VALUES ($1, $2, $3, NOW(), NOW()) RETURNING *`,
+      [contentId, 'new', '']
+    );
+    res.json({ success: true, item: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to create inbox item' });
+  }
+});
+
+// POST /api/ugc/discover
+app.post('/api/ugc/discover', (req, res) => {
+  const { hashtags, brandKeywords, platforms } = req.body;
+  
+  // Simulate content discovery
+  const discoveredContent = [
+    {
+      id: 'discovered_1',
+      platform: 'instagram',
+      content_type: 'video',
+      content_url: 'https://example.com/discovered1.mp4',
+      thumbnail_url: 'https://picsum.photos/300/400?random=10',
+      caption: 'Amazing product discovery! #brand #discovery',
+      username: 'discovered_user',
+      hashtags: ['brand', 'discovery', 'product'],
+      status: 'pending',
+      source: 'api',
+      brand_mentions: ['brand', 'product'],
+      sentiment_score: 0.85,
+      quality_score: 8.8,
+      created_at: new Date().toISOString(),
+      discovered_at: new Date().toISOString()
+    }
+  ];
+  
+  res.json(discoveredContent);
+});
+
+// POST /api/ugc/edit
+app.post('/api/ugc/edit', (req, res) => {
+  const { contentId, brandGuidelines } = req.body;
+  
+  const edit = {
+    id: `edit_${Date.now()}`,
+    content_id: contentId,
+    edit_type: 'auto',
+    changes: brandGuidelines,
+    status: 'processing',
+    created_at: new Date().toISOString()
+  };
+  
+  // Simulate processing
+  setTimeout(() => {
+    edit.status = 'completed';
+    edit.output_url = `https://processed-content.com/${edit.id}.mp4`;
+    edit.completed_at = new Date().toISOString();
+  }, 2000);
+  
+  res.json(edit);
+});
+
+// GET /api/ugc/edit/:contentId
+app.get('/api/ugc/edit/:contentId', (req, res) => {
+  const { contentId } = req.params;
+  
+  const edits = [
+    {
+      id: `edit_${contentId}_1`,
+      content_id: contentId,
+      edit_type: 'auto',
+      changes: {
+        filter: 'vintage',
+        brightness: 1.1,
+        contrast: 1.05
+      },
+      status: 'completed',
+      output_url: `https://processed-content.com/${contentId}_edit.mp4`,
+      created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      completed_at: new Date(Date.now() - 1.5 * 60 * 60 * 1000).toISOString()
+    }
+  ];
+  
+  res.json(edits);
+});
+
+// POST /api/ugc/voiceover
+app.post('/api/ugc/voiceover', (req, res) => {
+  const { contentId, script, voiceType } = req.body;
+  
+  const voiceover = {
+    id: `voiceover_${Date.now()}`,
+    content_id: contentId,
+    voice_type: voiceType || 'neutral',
+    language: 'en',
+    script: script || 'Check out this amazing content!',
+    status: 'generating',
+    created_at: new Date().toISOString()
+  };
+  
+  // Simulate generation
+  setTimeout(() => {
+    voiceover.status = 'completed';
+    voiceover.audio_url = `https://voiceover-service.com/${voiceover.id}.mp3`;
+    voiceover.duration = 15.5;
+    voiceover.completed_at = new Date().toISOString();
+  }, 3000);
+  
+  res.json(voiceover);
+});
+
+// GET /api/ugc/voiceover/:contentId
+app.get('/api/ugc/voiceover/:contentId', (req, res) => {
+  const { contentId } = req.params;
+  
+  const voiceovers = [
+    {
+      id: `voiceover_${contentId}_1`,
+      content_id: contentId,
+      voice_type: 'energetic',
+      language: 'en',
+      script: 'Check out this amazing content!',
+      status: 'completed',
+      audio_url: `https://voiceover-service.com/${contentId}_voiceover.mp3`,
+      duration: 15.5,
+      created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+      completed_at: new Date(Date.now() - 2.5 * 60 * 60 * 1000).toISOString()
+    }
+  ];
+  
+  res.json(voiceovers);
+});
+
+// POST /api/ugc/hotspots
+app.post('/api/ugc/hotspots', (req, res) => {
+  const { contentId } = req.body;
+  
+  const hotspots = [
+    {
+      id: `hotspot_${Date.now()}_1`,
+      content_id: contentId,
+      hotspot_type: 'product',
+      position: { x: 200, y: 300 },
+      size: { width: 120, height: 80 },
+      data: {
+        product_id: 'prod_1',
+        product_name: 'Premium T-Shirt',
+        product_price: 29.99,
+        product_url: '/product/premium-tshirt'
+      },
+      created_at: new Date().toISOString()
+    },
+    {
+      id: `hotspot_${Date.now()}_2`,
+      content_id: contentId,
+      hotspot_type: 'cta',
+      position: { x: 400, y: 500 },
+      size: { width: 150, height: 50 },
+      data: {
+        title: 'Shop Now',
+        description: 'Click to explore products',
+        cta_text: 'Shop Now'
+      },
+      created_at: new Date().toISOString()
+    }
+  ];
+  
+  res.json(hotspots);
+});
+
+// GET /api/ugc/hotspots/:contentId
+app.get('/api/ugc/hotspots/:contentId', (req, res) => {
+  const { contentId } = req.params;
+  
+  const hotspots = [
+    {
+      id: `hotspot_${contentId}_1`,
+      content_id: contentId,
+      hotspot_type: 'product',
+      position: { x: 200, y: 300 },
+      size: { width: 120, height: 80 },
+      data: {
+        product_id: 'prod_1',
+        product_name: 'Premium T-Shirt',
+        product_price: 29.99,
+        product_url: '/product/premium-tshirt'
+      },
+      created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+    }
+  ];
+  
+  res.json(hotspots);
+});
+
+// Rights management endpoints
+app.post('/api/ugc/rights/request', (req, res) => {
+  const { contentId, brandId, terms } = req.body;
+  
+  res.json({
+    success: true,
+    message: 'Rights request submitted successfully. You will be notified when the creator responds.'
+  });
+});
+
+app.get('/api/ugc/rights/status/:contentId', (req, res) => {
+  const { contentId } = req.params;
+  
+  res.json({ status: 'pending' });
+});
+
+app.post('/api/ugc/rights/approve', (req, res) => {
+  const { contentId } = req.body;
+  
+  res.json({
+    success: true,
+    message: 'Rights approved successfully'
+  });
+});
+
+// POST /api/ugc/feedback
+app.post('/api/ugc/feedback', (req, res) => {
+  const { rating, comment, userId, contentId, context } = req.body;
+  const event = {
+    id: `feedback_${Date.now()}`,
+    rating, // 'up' | 'down'
+    comment: comment || '',
+    userId: userId || null,
+    contentId: contentId || null,
+    context: context || {},
+    timestamp: new Date().toISOString()
+  };
+  // Log to analytics DB (mocked as array for now)
+  mockFeedbackEvents.push(event);
+  // TODO: Wire this to your real analytics DB (e.g., Supabase, BigQuery, etc.)
+  res.json({ success: true, event });
+});
+
+// UGC Content CRUD Endpoints
+
+// GET /api/ugc/content - List all UGC content (with filters)
+app.get('/api/ugc/content', async (req, res) => {
+  try {
+    const { status, platform, tags, dateFrom, dateTo } = req.query;
+    let query = 'SELECT * FROM ugc_content';
+    let params = [];
+    let where = [];
+    if (status) { where.push(`status = $${params.length + 1}`); params.push(status); }
+    if (platform) { where.push(`platform = $${params.length + 1}`); params.push(platform); }
+    if (tags) { where.push(`tags && $${params.length + 1}`); params.push(tags.split(',')); }
+    if (dateFrom) { where.push(`created_at >= $${params.length + 1}`); params.push(dateFrom); }
+    if (dateTo) { where.push(`created_at <= $${params.length + 1}`); params.push(dateTo); }
+    if (where.length > 0) query += ' WHERE ' + where.join(' AND ');
+    query += ' ORDER BY created_at DESC';
+    const result = await db.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch UGC content' });
+  }
+});
+
+// GET /api/ugc/content/:id - Get a single UGC content item
+app.get('/api/ugc/content/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await db.query('SELECT * FROM ugc_content WHERE id = $1', [id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Content not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch UGC content item' });
+  }
+});
+
+// POST /api/ugc/content - Create a new UGC content item
+app.post('/api/ugc/content', async (req, res) => {
+  try {
+    // Destructure with defaults for optional fields
+    const {
+      platform,
+      content_type,
+      content_url = null,
+      thumbnail_url = null,
+      permalink = null,
+      caption = null,
+      username = null,
+      hashtags = [],
+      mentions = [],
+      engagement_metrics = { likes: 0, comments: 0, shares: 0, views: 0, saves: 0 },
+      location = null,
+      posted_at = null,
+      tags = [],
+      status = 'pending',
+      source = 'manual',
+      brand_mentions = [],
+      sentiment_score = null,
+      quality_score = null
+    } = req.body;
+    // Insert with correct types
+    const result = await db.query(
+      `INSERT INTO ugc_content (platform, content_type, content_url, thumbnail_url, permalink, caption, username, hashtags, mentions, engagement_metrics, location, posted_at, tags, status, source, brand_mentions, sentiment_score, quality_score, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,NOW(),NOW()) RETURNING *`,
+      [
+        platform,
+        content_type,
+        content_url,
+        thumbnail_url,
+        permalink,
+        caption,
+        username,
+        hashtags,
+        mentions,
+        engagement_metrics,
+        location,
+        posted_at,
+        tags,
+        status,
+        source,
+        brand_mentions,
+        sentiment_score,
+        quality_score
+      ]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to create UGC content', details: err.message });
+  }
+});
+
+// PUT /api/ugc/content/:id - Update a UGC content item
+app.put('/api/ugc/content/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const fields = [
+      'platform', 'content_type', 'content_url', 'thumbnail_url', 'permalink', 'caption', 'username', 'hashtags', 'mentions', 'engagement_metrics', 'location', 'posted_at', 'tags', 'status', 'source', 'brand_mentions', 'sentiment_score', 'quality_score'
+    ];
+    const updates = [];
+    const params = [];
+    fields.forEach((field, i) => {
+      if (req.body[field] !== undefined) {
+        updates.push(`${field} = $${params.length + 1}`);
+        params.push(req.body[field]);
+      }
+    });
+    if (updates.length === 0) return res.status(400).json({ error: 'No fields to update' });
+    params.push(id);
+    const query = `UPDATE ugc_content SET ${updates.join(', ')}, updated_at = NOW() WHERE id = $${params.length} RETURNING *`;
+    const result = await db.query(query, params);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Content not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update UGC content' });
+  }
+});
+
+// DELETE /api/ugc/content/:id - Delete a UGC content item
+app.delete('/api/ugc/content/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await db.query('DELETE FROM ugc_content WHERE id = $1 RETURNING *', [id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Content not found' });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete UGC content' });
+  }
+});
+
+// 1. Start OAuth
+app.get('/api/shopify/auth', (req, res) => {
+  const shop = req.query.shop;
+  if (!shop) return res.status(400).send('Missing shop parameter');
+  const state = Math.random().toString(36).substring(2);
+  req.session.shopifyState = state;
+  const installUrl = `https://${shop}/admin/oauth/authorize?` +
+    querystring.stringify({
+      client_id: process.env.SHOPIFY_API_KEY,
+      scope: process.env.SHOPIFY_SCOPES,
+      redirect_uri: process.env.SHOPIFY_REDIRECT_URI,
+      state,
+    });
+  res.redirect(installUrl);
+});
+
+// 2. OAuth Callback
+app.get('/api/shopify/callback', async (req, res) => {
+  const { shop, code, state } = req.query;
+  if (!shop || !code || !state) return res.status(400).send('Missing shop, code, or state');
+  if (state !== req.session.shopifyState) return res.status(403).send('Invalid state parameter');
+  try {
+    const tokenRes = await axios.post(`https://${shop}/admin/oauth/access_token`, {
+      client_id: process.env.SHOPIFY_API_KEY,
+      client_secret: process.env.SHOPIFY_API_SECRET,
+      code,
+    });
+    const accessToken = tokenRes.data.access_token;
+    // Store token in session (or DB for production)
+    req.session.shop = shop;
+    req.session.accessToken = accessToken;
+    res.redirect('/integrations?shop=connected');
+  } catch (err) {
+    res.status(500).send('Failed to get access token');
+  }
+});
+
+// 3. Get Store Info
+app.get('/api/shopify/store', async (req, res) => {
+  const { shop, accessToken } = req.session;
+  if (!shop || !accessToken) return res.status(401).json({ error: 'Not connected' });
+  try {
+    const storeRes = await axios.get(`https://${shop}/admin/api/2023-10/shop.json`, {
+      headers: { 'X-Shopify-Access-Token': accessToken }
+    });
+    res.json(storeRes.data.shop);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch store info' });
+  }
+});
+
+// 4. Get Products
+app.get('/api/shopify/products', async (req, res) => {
+  const { shop, accessToken } = req.session;
+  if (!shop || !accessToken) return res.status(401).json({ error: 'Not connected' });
+  try {
+    const productsRes = await axios.get(`https://${shop}/admin/api/2023-10/products.json`, {
+      headers: { 'X-Shopify-Access-Token': accessToken }
+    });
+    res.json(productsRes.data.products);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
+// 5. Get Orders
+app.get('/api/shopify/orders', async (req, res) => {
+  const { shop, accessToken } = req.session;
+  if (!shop || !accessToken) return res.status(401).json({ error: 'Not connected' });
+  try {
+    const ordersRes = await axios.get(`https://${shop}/admin/api/2023-10/orders.json`, {
+      headers: { 'X-Shopify-Access-Token': accessToken }
+    });
+    res.json(ordersRes.data.orders);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+});
+
+// User Authentication & Profile Endpoints
+const USER_TABLE = 'users'; // Change if using a different table
+
+// Register
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    // Check if user exists
+    const exists = await db.query(`SELECT id FROM ${USER_TABLE} WHERE email = $1`, [email]);
+    if (exists.rowCount > 0) return res.status(409).json({ error: 'User already exists' });
+    const hash = await bcrypt.hash(password, 10);
+    const result = await db.query(
+      `INSERT INTO ${USER_TABLE} (email, password, name, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id, email, name` ,
+      [email, hash, name || null]
+    );
+    res.status(201).json({ user: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Registration failed' });
+  }
+});
+
+// Login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    const result = await db.query(`SELECT * FROM ${USER_TABLE} WHERE email = $1`, [email]);
+    if (result.rowCount === 0) return res.status(401).json({ error: 'Invalid credentials' });
+    const user = result.rows[0];
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+    const token = jwt.sign({ userId: user.id, email: user.email, name: user.name }, process.env.JWT_SECRET || 'dev_jwt_secret', { expiresIn: '7d' });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// Get Profile
+app.get('/api/auth/profile', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const result = await db.query(`SELECT id, email, name FROM ${USER_TABLE} WHERE id = $1`, [userId]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'User not found' });
+    res.json({ user: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+// Update Profile
+app.put('/api/auth/profile', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { name } = req.body;
+    const result = await db.query(`UPDATE ${USER_TABLE} SET name = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, name`, [name, userId]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'User not found' });
+    res.json({ user: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// Forgot Password (mock, logs to console)
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    // In production, send email with reset link/token
+    console.log(`Password reset requested for: ${email}`);
+    res.json({ success: true, message: 'If this email exists, a reset link will be sent.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to process request' });
+  }
+});
+
+// Mount Veo routes
+app.use('/api/veo', veoRoutes);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Endpoint not found' });
+});
+
+// Sentry error handler (must be after all routes)
+app.use(Sentry.Handlers.errorHandler());
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`UGC API Server running on port ${PORT}`);
+  console.log(`Available endpoints:`);
+  console.log(`  GET  /api/ugc/analytics`);
+  console.log(`  GET  /api/ugc/inbox`);
+  console.log(`  PUT  /api/ugc/inbox/:id`);
+  console.log(`  POST /api/ugc/inbox`);
+  console.log(`  POST /api/ugc/discover`);
+  console.log(`  POST /api/ugc/edit`);
+  console.log(`  GET  /api/ugc/edit/:contentId`);
+  console.log(`  POST /api/ugc/voiceover`);
+  console.log(`  GET  /api/ugc/voiceover/:contentId`);
+  console.log(`  POST /api/ugc/hotspots`);
+  console.log(`  GET  /api/ugc/hotspots/:contentId`);
+  console.log(`  POST /api/ugc/rights/request`);
+  console.log(`  GET  /api/ugc/rights/status/:contentId`);
+  console.log(`  POST /api/ugc/rights/approve`);
+  console.log(`  POST /api/ugc/feedback`);
+  console.log(`  GET  /api/ugc/content`);
+  console.log(`  GET  /api/ugc/content/:id`);
+  console.log(`  POST /api/ugc/content`);
+  console.log(`  PUT  /api/ugc/content/:id`);
+  console.log(`  DELETE /api/ugc/content/:id`);
+  console.log(`  GET  /api/shopify/auth`);
+  console.log(`  GET  /api/shopify/callback`);
+  console.log(`  GET  /api/shopify/store`);
+  console.log(`  GET  /api/shopify/products`);
+  console.log(`  GET  /api/shopify/orders`);
+  console.log(`  POST /api/auth/register`);
+  console.log(`  POST /api/auth/login`);
+  console.log(`  GET  /api/auth/profile`);
+  console.log(`  PUT  /api/auth/profile`);
+  console.log(`  POST /api/auth/forgot-password`);
+});
+
+module.exports = 
+
+
+
+
+
+app; eneaon the 

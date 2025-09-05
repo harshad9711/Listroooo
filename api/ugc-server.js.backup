@@ -1,17 +1,20 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const session = require('express-session');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+import dotenv from 'dotenv';
+import express from 'express';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import session from 'express-session';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import Sentry from '@sentry/node';
 
-// Sentry integration
-const Sentry = require('@sentry/node');
+dotenv.config();
 Sentry.init({ dsn: process.env.SENTRY_DSN });
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Import Veo routes
+import veoRoutes from './veo-routes.js';
 
 // Sentry request handler (must be first middleware)
 app.use(Sentry.Handlers.requestHandler());
@@ -138,6 +141,74 @@ const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY;
 const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET;
 const SHOPIFY_SCOPES = process.env.SHOPIFY_SCOPES || 'read_products,read_orders,read_customers,read_inventory';
 const SHOPIFY_REDIRECT_URI = process.env.SHOPIFY_REDIRECT_URI || 'http://localhost:3001/api/shopify/callback';
+
+export async function POST(req: NextRequest){
+  const userId = await getUserId(req);
+  if (userId === "demo-user") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // ✅ env guards give JSON errors instead of crashing
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json({ error: "Missing OPENAI_API_KEY" }, { status: 500 });
+  }
+
+  try {
+    const bodyText = await req.text();                 // ✅ safer read
+    const body = bodyText ? JSON.parse(bodyText) : {};
+    const idea = body?.idea;
+    if (!idea || typeof idea !== "string") {
+      return NextResponse.json({ error: "Missing 'idea' (string)" }, { status: 400 });
+    }
+
+    const prompt = await ideaToJsonViaOpenAI(idea);
+    const safe = PromptSchema.parse(prompt);
+    return NextResponse.json({ prompt: safe, ideaHash: hashIdea(idea) }, { status: 200 });
+
+  } catch (err: any) {
+    // ✅ always return JSON, even when OpenAI fails
+    const msg = err?.message || "LLM failure";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+import { NextRequest, NextResponse } from "next/server";
+import { ideaToJsonViaOpenAI, hashIdea } from "@/lib/veo-llm";
+import { PromptSchema } from "@/lib/veo-schema";
+import { getUserId } from "@/lib/auth";
+
+export const runtime = "nodejs";         // ✅ avoid Edge (uses node:crypto, supabase cookies)
+export const dynamic = "force-dynamic";  // ✅ ensure no static/cached behavior in dev
+
+export async function POST(req: NextRequest){
+  const userId = await getUserId(req);
+  if (userId === "demo-user") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // ✅ env guards give JSON errors instead of crashing
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json({ error: "Missing OPENAI_API_KEY" }, { status: 500 });
+  }
+
+  try {
+    const bodyText = await req.text();                 // ✅ safer read
+    const body = bodyText ? JSON.parse(bodyText) : {};
+    const idea = body?.idea;
+    if (!idea || typeof idea !== "string") {
+      return NextResponse.json({ error: "Missing 'idea' (string)" }, { status: 400 });
+    }
+
+    const prompt = await ideaToJsonViaOpenAI(idea);
+    const safe = PromptSchema.parse(prompt);
+    return NextResponse.json({ prompt: safe, ideaHash: hashIdea(idea) }, { status: 200 });
+
+  } catch (err: any) {
+    // ✅ always return JSON, even when OpenAI fails
+    const msg = err?.message || "LLM failure";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+http://localhost:3001/api/shopify/callback';
 
 // Helper: get userId (replace with real auth in production)
 function getUserId(req) {
@@ -793,6 +864,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 });
 
+// Mount Veo routes
+app.use('/api/veo', veoRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -843,4 +917,10 @@ app.listen(PORT, () => {
   console.log(`  POST /api/auth/forgot-password`);
 });
 
-module.exports = app; 
+module.exports = 
+
+
+
+
+
+app; 

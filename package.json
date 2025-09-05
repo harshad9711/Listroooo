@@ -14,6 +14,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.56.0",
     "@aws-sdk/client-polly": "^3.529.1",
+    "@aws-sdk/client-s3": "^3.879.0",
+    "@aws-sdk/s3-request-presigner": "^3.879.0",
     "@datadog/browser-rum": "^6.12.1",
     "@ffmpeg/ffmpeg": "^0.12.10",
     "@ffmpeg/util": "^0.12.1",
@@ -26,9 +28,13 @@
     "@google/generative-ai": "^0.24.1",
     "@mediapipe/tasks-audio": "^0.10.12",
     "@mediapipe/tasks-vision": "^0.10.12",
+    "@prisma/client": "^6.15.0",
     "@sendgrid/mail": "^8.1.0",
     "@sentry/node": "^9.30.0",
     "@sentry/react": "^9.30.0",
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/auth-helpers-react": "^0.5.0",
+    "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.55.0",
     "@tensorflow/tfjs": "^4.17.0",
     "@tremor/react": "^3.14.1",
@@ -46,6 +52,7 @@
     "express": "^5.1.0",
     "express-session": "^1.18.2",
     "file-saver": "^2.0.5",
+    "framer-motion": "^12.23.12",
     "instagram-graph-api": "^7.0.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.344.0",
@@ -54,6 +61,7 @@
     "nodemailer": "^6.9.9",
     "openai": "^4.104.0",
     "pg": "^8.11.3",
+    "prisma": "^6.15.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-helmet": "^6.1.0",
@@ -62,7 +70,8 @@
     "recharts": "^2.12.0",
     "resend": "^3.2.0",
     "sendgrid": "^5.2.3",
-    "twilio": "^4.23.0"
+    "twilio": "^4.23.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.6.4",
@@ -79,6 +88,7 @@
     "eslint-plugin-react-refresh": "^0.4.5",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
     "vite": "^5.1.3"
   }

@@ -1,0 +1,52 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model VeoPrompt {
+  id               String              @id @default(cuid())
+  title            String?             @db.VarChar(180)
+  ideaHash         String
+  userId           String?
+  provider         String?
+  activeVersionId  String?
+  isTemplate       Boolean             @default(false)
+  activeVersion    VeoPromptVersion?   @relation("ActiveVersion", fields: [activeVersionId], references: [id])
+  versions         VeoPromptVersion[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([isTemplate])
+  @@unique([ideaHash, userId])
+}
+
+model VeoPromptVersion {
+  id             String   @id @default(cuid())
+  promptId       String
+  version        Int
+  meta           Json
+  story          Json
+  visuals        Json
+  audio          Json
+  branding       Json
+  deliverables   Json
+  providerJobId  String?
+  createdAt      DateTime @default(now())
+
+  prompt         VeoPrompt @relation(fields: [promptId], references: [id])
+  activeFor      VeoPrompt[] @relation("ActiveVersion")
+
+  @@unique([promptId, version])
+}
