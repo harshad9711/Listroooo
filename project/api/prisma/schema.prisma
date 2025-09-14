@@ -1,0 +1,46 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model VeoPrompt {
+  id               String              @id @default(cuid())
+  title            String?             @db.VarChar(180)
+  ideaHash         String
+  userId           String?
+  provider         String?
+  activeVersionId  String?
+  versions         VeoPromptVersion[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([userId])
+  @@unique([ideaHash, userId])
+}
+
+model VeoPromptVersion {
+  id             String   @id @default(cuid())
+  promptId       String
+  version        Int
+  meta           Json
+  story          Json
+  visuals        Json
+  audio          Json
+  branding       Json
+  deliverables   Json
+  providerJobId  String?  // set when sending to Veo
+  providerStatus String?
+  assets         Json?
+  createdAt      DateTime @default(now())
+
+  prompt         VeoPrompt @relation(fields: [promptId], references: [id])
+
+  @@unique([promptId, version])
+}

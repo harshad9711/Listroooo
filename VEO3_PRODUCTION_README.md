@@ -1,395 +1,319 @@
-# Veo3 Production System
+# Veo 3 Cinematic Generator - Production Ready
 
-A production-ready AI-powered content generation system for Listro.co, featuring Claude and Cohere integration for creating high-quality videos, images, and ads.
+A production-hardened video generation system that transforms structured JSON prompts into polished 8-second video creatives using Google's Veo 3 through the Gemini API.
 
-## 🚀 Features
+## 🚀 Production Features
 
-### Core Capabilities
-- **Batch Generation**: Create multiple assets simultaneously
-- **Multi-Format Support**: Videos, images, and ads
-- **AI-Powered Prompts**: Claude for primary content, Cohere for variants
-- **Real-time Monitoring**: Track job status and progress
-- **User Feedback System**: Collect ratings and comments
-- **Analytics Dashboard**: Monitor performance and usage
-- **Quota Management**: Prevent abuse with daily/monthly limits
+### ✅ **Complete Backend Infrastructure**
+- **PostgreSQL Database**: Full job tracking with `veo_jobs` table
+- **Idempotency**: Duplicate request protection with idea hashing
+- **Rate Limiting**: Daily quotas and concurrency limits per user
+- **Real-time Updates**: Server-Sent Events (SSE) for live progress
+- **Secure Storage**: Supabase private bucket with signed URLs
+- **Comprehensive Validation**: Zod schemas with business rule validation
 
-### Production Features
-- **Async Job Processing**: Background processing with status updates
-- **Error Handling**: Comprehensive error management and retry logic
-- **User Authentication**: Secure access with Supabase Auth
-- **Row Level Security**: Data isolation per user
-- **Performance Optimization**: Database indexing and caching
-- **Monitoring & Logging**: Track usage, errors, and performance
+### ✅ **Production Security**
+- **Server-Side Only**: All Gemini/Veo calls happen on the server
+- **Authentication**: Supabase JWT token validation
+- **Input Sanitization**: URL validation, size limits, content filtering
+- **Rate Limiting**: Per-user daily quotas and concurrency controls
+- **Error Handling**: Graceful error states with user-friendly messages
 
-## 🛠 Setup Instructions
+### ✅ **Scalable Architecture**
+- **Job Queue**: In-process queue with `p-queue` for concurrency control
+- **Database Persistence**: Full job lifecycle tracking
+- **Background Processing**: Non-blocking job execution
+- **Real-time Updates**: SSE with polling fallback
+- **CDN Integration**: Supabase storage with signed URLs
 
-### 1. Install Dependencies
+## 📊 Database Schema
 
-```bash
-npm install @anthropic-ai/sdk cohere-ai
+```sql
+create table veo_jobs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  idempotency_key text,
+  idea_hash text,
+  status text not null default 'queued', -- queued|running|done|error
+  platform text not null,
+  aspect text not null,
+  resolution text not null,
+  prompt_string text not null,
+  config jsonb not null,
+  asset_refs jsonb not null,
+  operation_name text,
+  output_url text,
+  error_message text,
+  progress int default 0,
+  created_at timestamptz default now(),
+  started_at timestamptz,
+  completed_at timestamptz
+);
 ```
 
-### 2. Environment Configuration
+## 🔧 Environment Configuration
 
-Create a `.env` file with the following variables:
+```bash
+# Veo 3 Configuration
+GEMINI_API_KEY=your_gemini_api_key_here
+VEO_MODEL_ID=veo-3.0-generate-001
+VEO_DEFAULT_RESOLUTION=720p
+VEO_DEFAULT_SEED=0
 
-```env
-# AI APIs
-VITE_CLAUDE_API_KEY=your_claude_api_key_here
-VITE_COHERE_API_KEY=your_cohere_api_key_here
+# Production Settings
+RENDERS_PER_DAY=10
+RENDERS_CONCURRENCY=2
 
-# Supabase
-VITE_SUPABASE_URL=your_supabase_project_url
+# Supabase Configuration
+VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# Feature Flags
-VITE_ENABLE_VEO3_PRODUCTION=true
 ```
 
-### 3. Database Setup
+## 🛠 API Endpoints
 
-Run the migration to create the required tables:
+### `POST /api/veo3/generate`
+Start video generation with idempotency support.
 
-```bash
-# Apply the Veo3 production migration
-supabase db push
+**Request:**
+```json
+{
+  "prompt": {
+    "idea": "Create a product showcase video",
+    "goal": "Increase product awareness",
+    "platform": "tiktok",
+    "aspect": "9:16",
+    "resolution": "720p",
+    "durationSec": 8,
+    "brand": {
+      "name": "MyBrand",
+      "tone": "premium, modern",
+      "colors": ["#FF6B6B", "#4ECDC4"]
+    },
+    "visualRefs": [
+      {
+        "id": "uuid",
+        "kind": "product",
+        "url": "https://example.com/image.jpg"
+      }
+    ],
+    "shotPlan": [
+      {
+        "tStart": 0,
+        "tEnd": 2,
+        "action": "Product reveal",
+        "camera": "Dolly in",
+        "composition": "Wide shot"
+      }
+    ],
+    "audio": {
+      "musicStyle": "cinematic",
+      "dialogue": "This product is amazing!",
+      "captions": true
+    }
+  },
+  "idempotencyKey": "unique-key-123"
+}
 ```
 
-This creates:
-- `veo3_jobs` - Job management and status tracking
-- `veo3_results` - Generated content storage
-- `veo3_feedback` - User feedback collection
-- `veo3_analytics` - Usage monitoring and insights
-
-### 4. API Key Setup
-
-#### Anthropic Claude
-1. Visit [Anthropic Console](https://console.anthropic.com/)
-2. Create an account and generate an API key
-3. Add to your `.env` file
-
-#### Cohere AI
-1. Visit [Cohere Console](https://console.cohere.ai/)
-2. Sign up and get your API key
-3. Add to your `.env` file
-
-## 📖 Usage
-
-### Basic Generation
-
-```typescript
-import { veo3Production } from '../services/veo3Production';
-
-// Create a single job
-const job = await veo3Production.createJob(
-  userId,
-  'video',
-  ['Create a cinematic product showcase for wireless earbuds'],
-  {
-    style: 'cinematic',
-    tone: 'energetic',
-    aspectRatio: '16:9',
-    targetPlatform: 'Instagram Reels'
+**Response:**
+```json
+{
+  "jobId": "uuid",
+  "status": "queued",
+  "quota": {
+    "used": 3,
+    "remaining": 7,
+    "limit": 10
   }
-);
-
-// Check job status
-const status = await veo3Production.getJobStatus(job.id);
+}
 ```
 
-### Batch Generation
+### `GET /api/veo3/jobs/:id`
+Get job status and details.
 
-```typescript
-// Create multiple prompts for batch processing
-const prompts = [
-  'Create a cinematic product showcase for wireless earbuds',
-  'Generate a social media ad for fitness smartwatch',
-  'Design a lifestyle image for coffee subscription'
-];
+**Response:**
+```json
+{
+  "id": "uuid",
+  "status": "running",
+  "progress": 50,
+  "platform": "tiktok",
+  "aspect": "9:16",
+  "resolution": "720p",
+  "outputUrl": "path/to/video.mp4",
+  "createdAt": "2024-01-08T10:00:00Z",
+  "startedAt": "2024-01-08T10:00:05Z"
+}
+```
 
-const batchJob = await veo3Production.createJob(
-  userId,
-  'batch',
-  prompts,
-  {
-    style: 'modern',
-    tone: 'professional',
-    aspectRatio: '16:9',
-    targetPlatform: 'Instagram'
+### `GET /api/veo3/jobs/:id/events` (SSE)
+Real-time job progress updates.
+
+**Event Stream:**
+```
+data: {"type": "status", "status": "running", "progress": 50}
+
+data: {"type": "status", "status": "done", "progress": 100, "outputUrl": "path/to/video.mp4"}
+```
+
+### `GET /api/veo3/jobs/:id/download`
+Download generated video (302 redirect to signed URL).
+
+### `GET /api/veo3/quota`
+Get user quota information.
+
+**Response:**
+```json
+{
+  "quota": {
+    "used": 3,
+    "remaining": 7,
+    "limit": 10
+  },
+  "concurrency": {
+    "running": 1,
+    "limit": 2
   }
-);
-```
-
-### Feedback Collection
-
-```typescript
-// Submit feedback for generated content
-await veo3Production.submitFeedback(
-  userId,
-  resultId,
-  5, // Rating 1-5
-  'Excellent quality! The visual style matches our brand perfectly.'
-);
-```
-
-## 🎯 Component Integration
-
-### Veo3ProductionForm
-
-The main generation interface with batch support:
-
-```tsx
-import Veo3ProductionForm from '../components/scanner/Veo3ProductionForm';
-
-<Veo3ProductionForm 
-  userId={user.id}
-  onJobCreated={(job) => {
-    console.log('New job created:', job);
-  }}
-/>
-```
-
-### Veo3Feedback
-
-Collect user feedback on generated content:
-
-```tsx
-import Veo3Feedback from '../components/scanner/Veo3Feedback';
-
-<Veo3Feedback
-  resultId={result.id}
-  userId={user.id}
-  onFeedbackSubmitted={() => {
-    console.log('Feedback submitted');
-  }}
-/>
-```
-
-## 📊 Analytics & Monitoring
-
-### Get Analytics
-
-```typescript
-const analytics = await veo3Production.getAnalytics();
-
-console.log('Success Rate:', analytics.successRate);
-console.log('Average Processing Time:', analytics.averageProcessingTime);
-console.log('Total Jobs:', analytics.totalJobs);
-```
-
-### User Quota Check
-
-```typescript
-// Check if user can create more jobs
-const quota = await veo3Production.checkUserQuota(userId);
-if (!quota.allowed) {
-  console.log('Quota exceeded:', quota.message);
 }
 ```
 
-## 🔧 Configuration
+## 🎯 Frontend Features
 
-### Job Processing Limits
+### **Real-time Progress Updates**
+- **SSE Support**: Live progress updates via Server-Sent Events
+- **Polling Fallback**: Automatic fallback to polling if SSE fails
+- **Progress Bar**: Visual progress indication with percentage
+- **Status Indicators**: Clear status icons and messages
 
-Adjust concurrent job processing in `veo3Production.ts`:
+### **Production UI**
+- **Quota Display**: Shows daily usage and remaining renders
+- **Validation**: Real-time form validation with error messages
+- **Download Management**: Secure download links with expiration
+- **Error Handling**: User-friendly error messages and recovery
 
-```typescript
-export class Veo3ProductionService {
-  private maxConcurrentJobs = 5; // Adjust based on your infrastructure
-  // ...
-}
-```
+### **User Experience**
+- **Idempotency**: Prevents duplicate submissions
+- **Rate Limiting**: Clear feedback when limits are reached
+- **Concurrency Control**: Shows running jobs and limits
+- **Template System**: Pre-built templates for common use cases
 
-### Quota Limits
+## 🔒 Security Features
 
-Modify daily/monthly limits in the database migration:
+### **Input Validation**
+- **Zod Schemas**: Comprehensive server-side validation
+- **URL Validation**: Only http(s) URLs allowed for assets
+- **Size Limits**: 10MB maximum for image assets
+- **Content Filtering**: Sanitized text inputs with length limits
 
-```sql
--- In the get_user_veo3_quota function
-50::INTEGER as daily_limit, -- Adjust based on pricing tier
-1000::INTEGER as monthly_limit, -- Adjust based on pricing tier
-```
+### **Authentication & Authorization**
+- **JWT Validation**: Supabase token verification
+- **User Isolation**: Users can only access their own jobs
+- **Rate Limiting**: Per-user daily quotas and concurrency limits
+- **Secure Storage**: Private Supabase bucket with signed URLs
 
-### AI Model Configuration
+### **Error Handling**
+- **Graceful Degradation**: Fallback mechanisms for all features
+- **Error Logging**: Comprehensive error tracking and logging
+- **User Feedback**: Clear error messages without exposing internals
 
-Customize AI models and parameters:
+## 📈 Monitoring & Observability
 
-```typescript
-// Claude configuration
-const response = await claude.messages.create({
-  model: 'claude-3-opus-20240229', // Use latest model
-  max_tokens: 4000,
-  temperature: 0.7, // Adjust creativity level
-  // ...
-});
+### **Database Tracking**
+- **Job Lifecycle**: Complete audit trail of all jobs
+- **Performance Metrics**: Processing times and success rates
+- **User Analytics**: Usage patterns and quota consumption
 
-// Cohere configuration
-const response = await cohere.generate({
-  model: 'command-r-plus', // Use latest model
-  max_tokens: 200,
-  temperature: 0.8, // Adjust creativity level
-  num_generations: 3, // Number of variants
-  // ...
-});
-```
-
-## 🚨 Error Handling
-
-### Common Errors
-
-1. **API Rate Limits**
-   ```typescript
-   try {
-     await veo3Production.createJob(/* ... */);
-   } catch (error) {
-     if (error.message.includes('rate limit')) {
-       // Implement exponential backoff
-       await new Promise(resolve => setTimeout(resolve, 1000));
-     }
-   }
-   ```
-
-2. **Quota Exceeded**
-   ```typescript
-   const quota = await veo3Production.checkUserQuota(userId);
-   if (!quota.allowed) {
-     // Show upgrade prompt or wait message
-   }
-   ```
-
-3. **Job Processing Failures**
-   ```typescript
-   const job = await veo3Production.getJobStatus(jobId);
-   if (job.status === 'failed') {
-     console.log('Job failed:', job.error);
-     // Retry or notify user
-   }
-   ```
-
-## 🔒 Security
-
-### Row Level Security
-
-All tables have RLS policies ensuring users can only access their own data:
-
-```sql
--- Users can only view their own jobs
-CREATE POLICY "Users can view their own jobs" ON veo3_jobs
-    FOR SELECT USING (auth.uid() = user_id);
-```
-
-### API Key Security
-
-- Never commit API keys to version control
-- Use environment variables for all sensitive data
-- Rotate API keys regularly
-- Monitor API usage for anomalies
-
-## 📈 Performance Optimization
-
-### Database Indexing
-
-The migration includes optimized indexes:
-
-```sql
-CREATE INDEX idx_veo3_jobs_user_id ON veo3_jobs(user_id);
-CREATE INDEX idx_veo3_jobs_status ON veo3_jobs(status);
-CREATE INDEX idx_veo3_jobs_created_at ON veo3_jobs(created_at);
-```
-
-### Caching Strategy
-
-Consider implementing Redis caching for:
-- Job status queries
-- User quota checks
-- Analytics data
-
-### Async Processing
-
-Jobs are processed asynchronously to prevent UI blocking:
-
-```typescript
-// Jobs are queued and processed in background
-if (this.processingJobs.size < this.maxConcurrentJobs) {
-  this.processJob(data.id);
-}
-```
+### **Error Tracking**
+- **Comprehensive Logging**: All errors logged with context
+- **Sentry Integration**: Optional error tracking with Sentry
+- **Health Checks**: Endpoint monitoring and status reporting
 
 ## 🧪 Testing
 
-### Unit Tests
-
-```typescript
-// Test job creation
-test('should create job successfully', async () => {
-  const job = await veo3Production.createJob(
-    'test-user-id',
-    'video',
-    ['test prompt'],
-    {}
-  );
-  
-  expect(job.status).toBe('pending');
-  expect(job.prompts).toContain('test prompt');
-});
+### **Unit Tests**
+```bash
+cd api
+npm test
 ```
 
-### Integration Tests
-
-```typescript
-// Test full generation flow
-test('should process job end-to-end', async () => {
-  const job = await veo3Production.createJob(/* ... */);
-  
-  // Wait for processing
-  await new Promise(resolve => setTimeout(resolve, 5000));
-  
-  const updatedJob = await veo3Production.getJobStatus(job.id);
-  expect(updatedJob.status).toBe('completed');
-});
-```
+### **Test Coverage**
+- **Schema Validation**: Zod schema validation tests
+- **Prompt Building**: Prompt string generation tests
+- **Hash Generation**: Idempotency hash consistency tests
+- **Error Handling**: Edge case and error scenario tests
 
 ## 🚀 Deployment
 
-### Production Checklist
+### **Database Migration**
+```bash
+# Run the migration
+psql -d your_database -f supabase/migrations/20250108_veo_jobs.sql
+```
 
-- [ ] Set up environment variables
-- [ ] Run database migrations
-- [ ] Configure API keys
-- [ ] Set up monitoring and logging
-- [ ] Test quota limits
-- [ ] Verify RLS policies
-- [ ] Monitor API usage
-- [ ] Set up error alerts
+### **Environment Setup**
+1. Copy `env.local.template` to `.env`
+2. Set your Gemini API key
+3. Configure Supabase credentials
+4. Set production limits (RENDERS_PER_DAY, RENDERS_CONCURRENCY)
 
-### Scaling Considerations
+### **Server Start**
+```bash
+# Backend
+cd api
+npm install
+npm start
 
-- **Horizontal Scaling**: Use multiple instances for job processing
-- **Database Scaling**: Consider read replicas for analytics queries
-- **API Limits**: Monitor and adjust based on usage patterns
-- **Caching**: Implement Redis for frequently accessed data
+# Frontend
+npm run dev
+```
 
-## 📞 Support
+## 📋 Production Checklist
 
-For issues or questions:
+- ✅ **Database Schema**: Created and migrated
+- ✅ **Rate Limiting**: Daily quotas and concurrency limits
+- ✅ **Idempotency**: Duplicate request protection
+- ✅ **Real-time Updates**: SSE with polling fallback
+- ✅ **Secure Storage**: Supabase private bucket
+- ✅ **Input Validation**: Comprehensive Zod schemas
+- ✅ **Error Handling**: Graceful error states
+- ✅ **Authentication**: Supabase JWT validation
+- ✅ **Testing**: Unit tests for core functions
+- ✅ **Documentation**: Complete API documentation
 
-1. Check the error logs in your Supabase dashboard
-2. Monitor API usage in Anthropic and Cohere consoles
-3. Review the analytics dashboard for performance insights
-4. Contact the development team for complex issues
+## 🎬 Usage Flow
 
-## 🔄 Updates
+1. **User Input**: Fill out the comprehensive form
+2. **Validation**: Client and server-side validation
+3. **Job Creation**: Create job with idempotency check
+4. **Background Processing**: Queue job for processing
+5. **Real-time Updates**: SSE connection for live progress
+6. **Video Generation**: Call Gemini/Veo API
+7. **Storage**: Upload to Supabase private bucket
+8. **Download**: Generate signed URL for download
 
-### Version History
+## 🔧 Configuration Options
 
-- **v1.0.0**: Initial production release with Claude + Cohere integration
-- **v1.1.0**: Added batch processing and feedback system
-- **v1.2.0**: Enhanced analytics and monitoring
+### **Rate Limiting**
+- `RENDERS_PER_DAY`: Daily quota per user (default: 10)
+- `RENDERS_CONCURRENCY`: Max concurrent jobs per user (default: 2)
 
-### Upcoming Features
+### **Video Settings**
+- `VEO_MODEL_ID`: Gemini model ID (default: veo-3.0-generate-001)
+- `VEO_DEFAULT_RESOLUTION`: Default resolution (default: 720p)
+- `VEO_DEFAULT_SEED`: Default seed for reproducibility (default: 0)
 
-- [ ] Real-time video generation
-- [ ] Advanced prompt templates
-- [ ] A/B testing framework
-- [ ] Export to multiple platforms
-- [ ] Advanced analytics dashboard 
+### **Security**
+- Image size limit: 10MB maximum
+- Prompt length limit: 8000 characters
+- Visual references limit: 6 maximum
+- Shot plan limit: 8 shots maximum
+
+## 🎯 Performance
+
+- **Concurrent Processing**: Configurable per-user limits
+- **Background Jobs**: Non-blocking job execution
+- **Real-time Updates**: SSE for instant progress updates
+- **Efficient Storage**: Optimized video storage and retrieval
+- **Caching**: Signed URL caching for downloads
+
+The Veo 3 Cinematic Generator is now production-ready with enterprise-grade features, security, and scalability! 🚀

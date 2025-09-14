@@ -71,6 +71,10 @@ import VeoBuilder from './pages/VeoBuilder';
 import VeoBuilderPro from './pages/VeoBuilderPro';
 import VeoBuilderProTest from './pages/VeoBuilderProTest';
 import SimpleTest from './pages/SimpleTest';
+import VeoStudioPage from './features/veo3/VeoStudioPage';
+import VeoStudioPageEnhanced from './features/veo3/VeoStudioPageEnhanced';
+import VeoStudioTest from './features/veo3/VeoStudioTest';
+import VeoStudioSimple from './features/veo3/VeoStudioSimple';
 import TermsOfService from './pages/TermsOfService';
 import Verification from './pages/Verification';
 import Login from './pages/auth/Login';
@@ -138,6 +142,7 @@ function App() {
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/verify" element={<Verification />} />
+            <Route path="/veo3/studio" element={<VeoStudioSimple />} />
             
             {/* Auth routes */}
             <Route element={<AuthLayout />}>
@@ -161,6 +166,7 @@ function App() {
               <Route path="/veo3-prompt-builder" element={<RouteErrorBoundary><Veo3PromptBuilder /></RouteErrorBoundary>} />
               <Route path="/veo3-prompt-builder-new" element={<RouteErrorBoundary><Veo3PromptBuilderNew /></RouteErrorBoundary>} />
               <Route path="/veo-builder" element={<RouteErrorBoundary><VeoBuilder /></RouteErrorBoundary>} />
+              <Route path="/studio/veo3" element={<RouteErrorBoundary><VeoStudioPage /></RouteErrorBoundary>} />
               <Route path="/ugc" element={<RouteErrorBoundary><UGCDashboard /></RouteErrorBoundary>} />
               
               {/* Market Intelligence section */}
